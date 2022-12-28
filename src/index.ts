@@ -10,11 +10,11 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
             return value1 == value2;
         }
 
-        const largerThan = (value1: any, value2: any): boolean => {
+        const greaterThan = (value1: any, value2: any): boolean => {
             return value1 > value2;
         }
 
-        const smallerThan = (value1: any, value2: any): boolean => {
+        const lessThan = (value1: any, value2: any): boolean => {
             return value1 < value2;
         }
 
@@ -108,14 +108,14 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
             return (model) => contains(parameters.left(model), parameters.right(model));
         }
 
-        const parseLargerThan = (value: string): (model: { [key: string]: any; }) => boolean => {
+        const parseGreaterThan = (value: string): (model: { [key: string]: any; }) => boolean => {
             const parameters = resolveParameters(value);
-            return (model) => largerThan(parameters.left(model), parameters.right(model));
+            return (model) => greaterThan(parameters.left(model), parameters.right(model));
         }
 
-        const parseSmallerThan = (value: string): (model: { [key: string]: any; }) => boolean => {
+        const parseLessThan = (value: string): (model: { [key: string]: any; }) => boolean => {
             const parameters = resolveParameters(value);
-            return (model) => smallerThan(parameters.left(model), parameters.right(model));
+            return (model) => lessThan(parameters.left(model), parameters.right(model));
         }
 
         const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean => {
@@ -139,11 +139,11 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
                 case 'contains':
                     return parseContains(body);
 
-                case 'lt':
-                    return parseLargerThan(body);
+                case 'gt':
+                    return parseGreaterThan(body);
 
-                case 'st':
-                    return parseSmallerThan(body);
+                case 'lt':
+                    return parseLessThan(body);
 
                 case 'empty':
                     return parseEmpty(body);

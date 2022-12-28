@@ -9,8 +9,8 @@
 - or
 - and
 - contains
+- gt
 - lt
-- st
 - empty
 
 ## Constants
@@ -37,7 +37,7 @@ const model = {
     '2': 2
 };
 
-const expr = '  and( not(eq(#2, 5)), st(#2, 10) )  ';
+const expr = '  and( not(eq(#2, 5)), lt(#2, 10) )  ';
 const result = executeExpression(model, expr);
 
 console.log(`'${expr}' for ${JSON.stringify(model)} results in ${result}`);
@@ -46,7 +46,7 @@ const model2 = {
     '2': 12
 };
 
-const expr2 = '  and( not(eq(#2, 5)), st(#2, 10) )  ';
+const expr2 = '  and( not(eq(#2, 5)), lt(#2, 10) )  ';
 const result2 = executeExpression(model2, expr2);
 console.log(`'${expr2}' for ${JSON.stringify(model2)} results in ${result2}`);
 
@@ -119,8 +119,8 @@ console.log(`'${expr13}' for ${JSON.stringify(model12)} results in ${result13}`)
 Results:
 
 ```bash
-'  and( not(eq(#2, 5)), st(#2, 10) )  ' for {"2":2} results in true
-'  and( not(eq(#2, 5)), st(#2, 10) )  ' for {"2":12} results in false
+'  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":2} results in true
+'  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":12} results in false
 '  true  ' for {} results in true
 '  false  ' for {} results in false
 ' or (true,   false )  ' for {} results in true
