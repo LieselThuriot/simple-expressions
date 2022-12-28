@@ -1,0 +1,32 @@
+{
+  "name": "simple-expressions",
+  "version": "0.0.2",
+  "main": "lib/index.js",
+  "devDependencies": {
+    "typescript": "^4.9.4"
+  },
+  "keywords": [
+    "parser",
+    "lexer",
+    "script",
+    "execution"
+  ],
+  "author": "Steven Thuriot",
+  "license": "ISC",
+  "description": "Simple expression parsing and execution",
+  "scripts": {
+    "tsc": "tsc"
+  },
+  "types": "./lib\\index.d.ts",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StevenThuriot/simple-expressions.git"
+  },
+  "bugs": {
+    "url": "https://github.com/StevenThuriot/simple-expressions/issues"
+  },
+  "homepage": "https://github.com/StevenThuriot/simple-expressions#readme"
+}
