@@ -119,6 +119,8 @@ console.log(`'${expr13}' for ${JSON.stringify(model12)} results in ${result13}`)
 Results:
 
 ```bash
+TRUE results in true
+FALSE results in false
 '  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":2} results in true
 '  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":12} results in false
 '  true  ' for {} results in true
