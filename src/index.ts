@@ -1,4 +1,4 @@
-export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string) => boolean {
+export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string | boolean) => boolean {
     const ___expressionCache: { [key: string]: any; } = {};
     const ___parseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
         const cachedExpression = ___expressionCache[expression];
@@ -19,8 +19,6 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
         }
 
         const contains = (value1: any, value2: any): boolean => {
-            value1 = value1;
-
             if (typeof value1 === 'string') {
                 return value1.indexOf(value2) >= 0;
             }
@@ -85,7 +83,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
                         break;
                 }
             }
-            throw new Error("Invalid Expression");
+            throw new Error("Invalid Expression Part: " + value);
         }
 
         const parseEquals = (value: string): (model: { [key: string]: any; }) => boolean => {
@@ -217,14 +215,18 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
     }
 
     return (m, e) => {
-        if (!e) {
-            throw new Error("Invalid Expression: null");
+        if (typeof e === 'boolean') {
+            return () => e;
         }
-
-        e = e.trim();
-
+        
         if (!e) {
             throw new Error("Invalid Expression: empty");
+        }
+
+        e = (''+e).trim();
+
+        if (!e) {
+            throw new Error("Invalid Expression: whitespace");
         }
 
         if (e.indexOf('.') > 0) {

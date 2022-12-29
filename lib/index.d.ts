@@ -1,3 +1,3 @@
 export declare const executeExpression: (model: {
     [key: string]: any;
-}, expression: string) => boolean;
+}, expression: string | boolean) => boolean;
