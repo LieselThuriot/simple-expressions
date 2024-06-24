@@ -216,7 +216,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
     return (m, e) => {
         if (typeof e === 'boolean') {
-            return () => e;
+            return e;
         }
         
         if (!e) {
