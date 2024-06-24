@@ -5,7 +5,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
         if (cachedExpression) {
             return cachedExpression;
         }
-        
+
         const equals = (value1: any, value2: any): boolean => {
             return value1 == value2;
         }
@@ -151,7 +151,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
             }
         }
 
-        const operatorRegex = /^\s*(?<operator>[a-zA-Z]+)\s*(?<body>\(.+?\))\s*$/;
+        const operatorRegex = /^\s*([a-zA-Z]+)\s*(\(.+?\))\s*$/;
 
         const parse = (value: string): (model: { [key: string]: any; }) => any => {
             value = value.trim();
@@ -162,15 +162,12 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
                 case 'false':
                     return () => false;
                 default:
-                    const match:any = operatorRegex.exec(value);
+                    const match: any = operatorRegex.exec(value);
 
                     if (match) {
-                        const groups = match['groups'] as { operator: string; body: string };
-                        if (groups) {
-                            const operator = groups.operator;
-                            const body = groups.body;
-                            return parseOperator(operator, body);
-                        }
+                        const operator: string = match[1];
+                        const body: string = match[2];
+                        return parseOperator(operator, body);
                     }
 
                     //return as constant since we didn't find an operator
@@ -190,21 +187,21 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
         const parsedResult = parse(expression);
         ___expressionCache[expression] = parsedResult;
-        
+
         return parsedResult;
     }
 
     const ___flattenObject = (ob: any) => {
-        var toReturn:any = {};
-    
+        var toReturn: any = {};
+
         for (var i in ob) {
             if (!ob.hasOwnProperty(i)) continue;
-    
+
             if ((typeof ob[i]) == 'object' && ob[i] !== null) {
                 var flatObject = ___flattenObject(ob[i]);
                 for (var x in flatObject) {
                     if (!flatObject.hasOwnProperty(x)) continue;
-    
+
                     toReturn[i + '.' + x] = flatObject[x];
                 }
             } else {
@@ -218,12 +215,12 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
         if (typeof e === 'boolean') {
             return e;
         }
-        
+
         if (!e) {
             throw new Error("Invalid Expression: empty");
         }
 
-        e = (''+e).trim();
+        e = ('' + e).trim();
 
         if (!e) {
             throw new Error("Invalid Expression: whitespace");
