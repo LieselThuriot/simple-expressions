@@ -47,7 +47,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
         return false;
     }
-    const parseSingleBody = (value: any) => parse(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
+    const parseSingleBody = (value: any) => parseExpression(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
 
     const parseNot = (value: string): (model: { [key: string]: any; }) => boolean => {
         const inner = parseSingleBody(value);
@@ -73,8 +73,8 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
                 case ',':
                     if (bracketCount === 1) {
-                        const left = parse(value.substring(1, i));
-                        const right = parse(value.substring(i + 1).replace(/\)?\s*$/, ''));
+                        const left = parseExpression(value.substring(1, i));
+                        const right = parseExpression(value.substring(i + 1).replace(/\)?\s*$/, ''));
 
                         return { left, right };
                     }
@@ -152,11 +152,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
     const operatorRegex = /^\s*([a-zA-Z]+)\s*(\(.+?\))\s*$/;
 
     const parse = (value: string): (model: { [key: string]: any; }) => any => {
-        value = value.trim();
-
         switch (value.toLowerCase()) {
-            case '':
-                throw new Error("Invalid Expression: formatting");
             case 'true':
                 return () => true;
             case 'false':
@@ -188,6 +184,10 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
     const parseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
         expression = expression.trim();
+
+        if (expression === '') {
+            throw new Error("Invalid Expression: formatting");
+        }
 
         const cachedExpression = expressionCache[expression];
         if (cachedExpression) {
@@ -233,6 +233,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
             throw new Error("Invalid Expression: empty");
         }
 
+        e = e.replace(/(\r\n|\n|\r)/gm, '');
         e = e.trim();
 
         if (!e) {

@@ -1,6 +1,6 @@
 {
   "name": "simple-expressions",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "lib/index.js",
   "devDependencies": {
     "typescript": "^4.9.4"
