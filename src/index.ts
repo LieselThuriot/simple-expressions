@@ -1,4 +1,7 @@
 export class SimpleExpressionCaches {
+    private static _enabled: boolean = true;
+    private static _verbose: boolean = false;
+
     private static _parseCache: { [key: string]: any; } = {
         'true': () => true,
         'false': () => false
@@ -6,9 +9,30 @@ export class SimpleExpressionCaches {
 
     private static _simpleCache: { [key: string]: SimpleExpression; } = {};
 
-    static get(e: string | boolean): SimpleExpression {
+    private static logVerbose(message: string, key: string, data: any) {
+        if (this._verbose) {
+            console.log(message, key, data);
+        }
+    }
+
+    public static get(e: string | boolean): SimpleExpression {
         const key = '' + e;
-        return this._simpleCache[key] || (this._simpleCache[key] = new SimpleExpression(e));
+        if (this._enabled) {
+            const cachedExpression = this._simpleCache[key];
+            if (cachedExpression) {
+                this.logVerbose('Resolved Simple Expression from cache', key, cachedExpression);
+                return cachedExpression;
+            }
+        }
+
+        const result = new SimpleExpression(e);
+
+        if (this._enabled) {
+            this._simpleCache[key] = result;
+            this.logVerbose('Cached Simple Expression', key, result);
+        }
+
+        return result;
     }
 
     public static getParsedExpression(expression: string, factory: (value: string) => (model: { [key: string]: any; }) => any): (model: { [key: string]: any; }) => any {
@@ -17,14 +41,21 @@ export class SimpleExpressionCaches {
         if (expression === '') {
             throw new Error("Invalid Expression: formatting");
         }
-        
-        const cachedExpression = this._parseCache[expression];
-        if (cachedExpression) {
-            return cachedExpression;
+
+        if (this._enabled) {
+            const cachedExpression = this._parseCache[expression];
+            if (cachedExpression) {
+                this.logVerbose('Resolved Parsed Expression from cache', expression, cachedExpression);
+                return cachedExpression;
+            }
         }
 
         const parsedResult = factory(expression);
-        this._parseCache[expression] = parsedResult;
+
+        if (this._enabled) {
+            this._parseCache[expression] = parsedResult;
+            this.logVerbose('Cached Parsed Expression', expression, parsedResult);
+        }
 
         return parsedResult;
     }
@@ -46,6 +77,22 @@ export class SimpleExpressionCaches {
 
         if (!!options.expression) {
             this._simpleCache = {};
+        }
+    }
+
+    public static disable() {
+        this._enabled = false;
+    }
+
+    public static enable() {
+        this._enabled = true;
+    }
+
+    public static verbose(value?: boolean) {
+        if (value === undefined) {
+            this._verbose = true;
+        } else {
+            this._verbose = value;
         }
     }
 }
