@@ -156,6 +156,8 @@ export const parseExpression = (function (): (expression: string) => (model: { [
 
     const resolveParameters = (value: string): { left: (model: { [key: string]: any; }) => boolean; right: (model: { [key: string]: any; }) => boolean } => {
         let bracketCount = 0;
+        let insideConstant = false;
+        
         for (let i = 0; i < value.length; i++) {
             const character = value[i];
             switch (character) {
@@ -166,8 +168,13 @@ export const parseExpression = (function (): (expression: string) => (model: { [
                     bracketCount--;
                     break;
 
+                case '"':
+                case "'":
+                    insideConstant = !insideConstant;
+                    break;
+
                 case ',':
-                    if (bracketCount === 1) {
+                    if (!insideConstant && bracketCount === 1) {
                         const left = innerParseExpression(value.substring(1, i));
                         const right = innerParseExpression(value.substring(i + 1).replace(/\)?\s*$/, ''));
 
