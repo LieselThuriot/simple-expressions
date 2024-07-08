@@ -1,9 +1,56 @@
-export const parseExpression = (function (): (expression: string) => (model: { [key: string]: any; }) => any {
-    const expressionCache: { [key: string]: any; } = {
+export class SimpleExpressionCaches {
+    private static _parseCache: { [key: string]: any; } = {
         'true': () => true,
         'false': () => false
     };
 
+    private static _simpleCache: { [key: string]: SimpleExpression; } = {};
+
+    static get(e: string | boolean): SimpleExpression {
+        const key = '' + e;
+        return this._simpleCache[key] || (this._simpleCache[key] = new SimpleExpression(e));
+    }
+
+    public static getParsedExpression(expression: string, factory: (value: string) => (model: { [key: string]: any; }) => any): (model: { [key: string]: any; }) => any {
+        expression = expression.trim();
+
+        if (expression === '') {
+            throw new Error("Invalid Expression: formatting");
+        }
+        
+        const cachedExpression = this._parseCache[expression];
+        if (cachedExpression) {
+            return cachedExpression;
+        }
+
+        const parsedResult = factory(expression);
+        this._parseCache[expression] = parsedResult;
+
+        return parsedResult;
+    }
+
+    public static clear(options?: { parsed?: boolean, expression?: boolean }) {
+        if (!options) {
+            options = {
+                parsed: true,
+                expression: true
+            };
+        }
+
+        if (!!options.parsed) {
+            this._parseCache = {
+                'true': () => true,
+                'false': () => false
+            };
+        }
+
+        if (!!options.expression) {
+            this._simpleCache = {};
+        }
+    }
+}
+
+export const parseExpression = (function (): (expression: string) => (model: { [key: string]: any; }) => any {
     const equals = (value1: any, value2: any): boolean => {
         return value1 == value2;
     }
@@ -48,7 +95,7 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         return false;
     }
 
-    const parseSingleBody = (value: any) => parseExpression(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
+    const parseSingleBody = (value: any) => innerParseExpression(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
 
     const parseNot = (value: string): (model: { [key: string]: any; }) => boolean => {
         const inner = parseSingleBody(value);
@@ -74,8 +121,8 @@ export const parseExpression = (function (): (expression: string) => (model: { [
 
                 case ',':
                     if (bracketCount === 1) {
-                        const left = parseExpression(value.substring(1, i));
-                        const right = parseExpression(value.substring(i + 1).replace(/\)?\s*$/, ''));
+                        const left = innerParseExpression(value.substring(1, i));
+                        const right = innerParseExpression(value.substring(i + 1).replace(/\)?\s*$/, ''));
 
                         return { left, right };
                     }
@@ -190,37 +237,16 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         }
     }
 
-    const parseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
-        expression = expression.trim();
-
-        if (expression === '') {
-            throw new Error("Invalid Expression: formatting");
-        }
-
-        const cachedExpression = expressionCache[expression];
-        if (cachedExpression) {
-            return cachedExpression;
-        }
-
-        const parsedResult = parse(expression);
-        expressionCache[expression] = parsedResult;
-
-        return parsedResult;
+    const innerParseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
+        return SimpleExpressionCaches.getParsedExpression(expression, parse);
     };
 
-    return parseExpression;
+    return innerParseExpression;
 })();
 
 export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string | boolean) => boolean {
-    const simpleCache: { [key: string]: any; } = {};
-
     return (m, e) => {
-        if (typeof e === 'boolean') {
-            return e;
-        }
-
-        const simpleExpression = simpleCache[e] || (simpleCache[e] = new SimpleExpression(e));
-        return simpleExpression.evaluate(m);
+        return SimpleExpressionCaches.get(e).evaluate(m);
     };
 })();
 
@@ -248,7 +274,7 @@ export class SimpleExpression {
         return toReturn;
     }
 
-    constructor(expression: string) {
+    constructor(expression: string | boolean) {
         if (typeof expression === 'boolean') {
             this._parsedExpression = () => expression;
         } else {
@@ -284,7 +310,7 @@ export class SimpleExpression {
             model = this.flattenObject(model);
         }
 
-        return this._parsedExpression(model);
+        return !!this._parsedExpression(model);
     }
 
 }

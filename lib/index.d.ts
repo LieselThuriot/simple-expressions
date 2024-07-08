@@ -1,3 +1,17 @@
+export declare class SimpleExpressionCaches {
+    private static _parseCache;
+    private static _simpleCache;
+    static get(e: string | boolean): SimpleExpression;
+    static getParsedExpression(expression: string, factory: (value: string) => (model: {
+        [key: string]: any;
+    }) => any): (model: {
+        [key: string]: any;
+    }) => any;
+    static clear(options?: {
+        parsed?: boolean;
+        expression?: boolean;
+    }): void;
+}
 export declare const parseExpression: (expression: string) => (model: {
     [key: string]: any;
 }) => any;
@@ -8,7 +22,7 @@ export declare class SimpleExpression {
     private readonly _parsedExpression;
     private readonly _needsFlattening;
     private flattenObject;
-    constructor(expression: string);
+    constructor(expression: string | boolean);
     evaluate(model: {
         [key: string]: any;
     }): boolean;
