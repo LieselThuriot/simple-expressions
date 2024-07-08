@@ -1,4 +1,4 @@
-export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string | boolean) => boolean {
+export const parseExpression = (function (): (expression: string) => (model: { [key: string]: any; }) => any {
     const expressionCache: { [key: string]: any; } = {
         'true': () => true,
         'false': () => false
@@ -47,6 +47,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
         return false;
     }
+
     const parseSingleBody = (value: any) => parseExpression(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
 
     const parseNot = (value: string): (model: { [key: string]: any; }) => boolean => {
@@ -150,6 +151,7 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
     }
 
     const operatorRegex = /^\s*([a-zA-Z]+)\s*(\(.+?\))\s*$/;
+    const stringRegex = /^\s*\"(.*)\"\s*$/;
 
     const parse = (value: string): (model: { [key: string]: any; }) => any => {
         switch (value.toLowerCase()) {
@@ -175,7 +177,13 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
 
                 const numericValue = parseFloat(value);
                 if (isNaN(numericValue)) {
-                    return () => value;
+                    const stringMatch = stringRegex.exec(value);
+                    if (stringMatch) {
+                        const stringValue = stringMatch[1];
+                        return () => stringValue;
+                    }
+
+                    throw new Error("Invalid Expression: invalid constant format");
                 }
 
                 return () => numericValue;
@@ -198,16 +206,36 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
         expressionCache[expression] = parsedResult;
 
         return parsedResult;
-    }
+    };
 
-    const flattenObject = (ob: any) => {
+    return parseExpression;
+})();
+
+export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string | boolean) => boolean {
+    const simpleCache: { [key: string]: any; } = {};
+
+    return (m, e) => {
+        if (typeof e === 'boolean') {
+            return e;
+        }
+
+        const simpleExpression = simpleCache[e] || (simpleCache[e] = new SimpleExpression(e));
+        return simpleExpression.evaluate(m);
+    };
+})();
+
+export class SimpleExpression {
+    private readonly _parsedExpression: (model: { [key: string]: any; }) => any;
+    private readonly _needsFlattening: boolean = false;
+
+    private flattenObject(ob: any) {
         var toReturn: any = {};
 
         for (var i in ob) {
             if (!ob.hasOwnProperty(i)) continue;
 
             if ((typeof ob[i]) == 'object' && ob[i] !== null) {
-                var flatObject = flattenObject(ob[i]);
+                var flatObject = this.flattenObject(ob[i]);
                 for (var x in flatObject) {
                     if (!flatObject.hasOwnProperty(x)) continue;
 
@@ -220,34 +248,43 @@ export const executeExpression = (function (): (model: { [key: string]: any; }, 
         return toReturn;
     }
 
-    return (m, e) => {
-        if (typeof e === 'boolean') {
-            return e;
+    constructor(expression: string) {
+        if (typeof expression === 'boolean') {
+            this._parsedExpression = () => expression;
+        } else {
+            if (!(typeof expression === 'string')) {
+                throw new Error("Invalid Expression: unsupported type");
+            }
+
+            if (!expression) {
+                throw new Error("Invalid Expression: empty");
+            }
+
+            expression = expression.replace(/(\r\n|\n|\r)/gm, '');
+            expression = expression.trim();
+
+            if (!expression) {
+                throw new Error("Invalid Expression: whitespace");
+            }
+
+            if ((expression.match(/\(/g) || []).length !== (expression.match(/\)/g) || []).length) {
+                throw new Error("Invalid Expression: unbalanced parenthesis");
+            }
+
+            if (expression.indexOf('.') > 0) {
+                this._needsFlattening = true;
+            }
+
+            this._parsedExpression = parseExpression(expression);
+        }
+    }
+
+    public evaluate(model: { [key: string]: any; }): boolean {
+        if (this._needsFlattening) {
+            model = this.flattenObject(model);
         }
 
-        if (!(typeof e === 'string')) {
-            throw new Error("Invalid Expression: unsupported type");
-        }
+        return this._parsedExpression(model);
+    }
 
-        if (!e) {
-            throw new Error("Invalid Expression: empty");
-        }
-
-        e = e.replace(/(\r\n|\n|\r)/gm, '');
-        e = e.trim();
-
-        if (!e) {
-            throw new Error("Invalid Expression: whitespace");
-        }
-
-        if ((e.match(/\(/g) || []).length !== (e.match(/\)/g) || []).length) {
-            throw new Error("Invalid Expression: unbalanced parenthesis");
-        }
-
-        if (e.indexOf('.') > 0) {
-            m = flattenObject(m);
-        }
-
-        return parseExpression(e)(m);
-    };
-})();
+}

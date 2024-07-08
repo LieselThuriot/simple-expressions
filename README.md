@@ -119,19 +119,19 @@ console.log(`'${expr13}' for ${JSON.stringify(model12)} results in ${result13}`)
 Results:
 
 ```bash
-TRUE results in true
-FALSE results in false
+true results in true
+false results in false
 '  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":2} results in true
 '  and( not(eq(#2, 5)), lt(#2, 10) )  ' for {"2":12} results in false
 '  true  ' for {} results in true
 '  false  ' for {} results in false
 ' or (true,   false )  ' for {} results in true
-' AND (TRUE,   FALSE )  ' for {} results in false
-' AND (TRUE,   0 )  ' for {} results in false
-' AND (TRUE,   "blub" )  ' for {} results in true
-' AND (TRUE,   not( empty( #text )) )  ' for {"text":"test"} results in true
-' AND (TRUE,   not( empty( #text )) )  ' for {"text":""} results in false
-' AND (TRUE,   not( empty( #text )) )  ' for {} results in false
-' AND (TRUE,   not( empty( #text.innerText )) )  ' for {"text":{"innerText":"test"}} results in true
-' AND (TRUE, empty( #text.innerText ) )  ' for {"text":{"innerText":"test"}} results in false
+' AND (true,   false )  ' for {} results in false
+' AND (true,   0 )  ' for {} results in false
+' AND (true,   "blub" )  ' for {} results in true
+' AND (true,   not( empty( #text )) )  ' for {"text":"test"} results in true
+' AND (true,   not( empty( #text )) )  ' for {"text":""} results in false
+' AND (true,   not( empty( #text )) )  ' for {} results in false
+' AND (true,   not( empty( #text.innerText )) )  ' for {"text":{"innerText":"test"}} results in true
+' AND (true, empty( #text.innerText ) )  ' for {"text":{"innerText":"test"}} results in false
 ```
