@@ -1,6 +1,6 @@
-export declare class SimpleExpressionCaches {
-    private static _enabled;
-    private static _verbose;
+export declare class SimpleExpressions {
+    private static _enabledCaches;
+    private static _verboseLogging;
     private static _parseCache;
     private static _simpleCache;
     private static logVerbose;
@@ -14,8 +14,8 @@ export declare class SimpleExpressionCaches {
         parsed?: boolean;
         expression?: boolean;
     }): void;
-    static disable(): void;
-    static enable(): void;
+    static disableCaches(): void;
+    static enableChaches(): void;
     static verbose(value?: boolean): void;
 }
 export declare const parseExpression: (expression: string) => (model: {

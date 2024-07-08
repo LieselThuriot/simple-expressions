@@ -1,6 +1,6 @@
-export class SimpleExpressionCaches {
-    private static _enabled: boolean = true;
-    private static _verbose: boolean = false;
+export class SimpleExpressions {
+    private static _enabledCaches: boolean = true;
+    private static _verboseLogging: boolean = false;
 
     private static _parseCache: { [key: string]: any; } = {
         'true': () => true,
@@ -10,14 +10,14 @@ export class SimpleExpressionCaches {
     private static _simpleCache: { [key: string]: SimpleExpression; } = {};
 
     private static logVerbose(message: string, key: string, data: any) {
-        if (this._verbose) {
+        if (this._verboseLogging) {
             console.log(message, key, data);
         }
     }
 
     public static get(e: string | boolean): SimpleExpression {
         const key = '' + e;
-        if (this._enabled) {
+        if (this._enabledCaches) {
             const cachedExpression = this._simpleCache[key];
             if (cachedExpression) {
                 this.logVerbose('Resolved Simple Expression from cache', key, cachedExpression);
@@ -27,7 +27,7 @@ export class SimpleExpressionCaches {
 
         const result = new SimpleExpression(e);
 
-        if (this._enabled) {
+        if (this._enabledCaches) {
             this._simpleCache[key] = result;
             this.logVerbose('Cached Simple Expression', key, result);
         }
@@ -42,7 +42,7 @@ export class SimpleExpressionCaches {
             throw new Error("Invalid Expression: formatting");
         }
 
-        if (this._enabled) {
+        if (this._enabledCaches) {
             const cachedExpression = this._parseCache[expression];
             if (cachedExpression) {
                 this.logVerbose('Resolved Parsed Expression from cache', expression, cachedExpression);
@@ -52,7 +52,7 @@ export class SimpleExpressionCaches {
 
         const parsedResult = factory(expression);
 
-        if (this._enabled) {
+        if (this._enabledCaches) {
             this._parseCache[expression] = parsedResult;
             this.logVerbose('Cached Parsed Expression', expression, parsedResult);
         }
@@ -80,19 +80,19 @@ export class SimpleExpressionCaches {
         }
     }
 
-    public static disable() {
-        this._enabled = false;
+    public static disableCaches() {
+        this._enabledCaches = false;
     }
 
-    public static enable() {
-        this._enabled = true;
+    public static enableChaches() {
+        this._enabledCaches = true;
     }
 
     public static verbose(value?: boolean) {
         if (value === undefined) {
-            this._verbose = true;
+            this._verboseLogging = true;
         } else {
-            this._verbose = value;
+            this._verboseLogging = value;
         }
     }
 }
@@ -183,6 +183,7 @@ export const parseExpression = (function (): (expression: string) => (model: { [
                     break;
             }
         }
+
         throw new Error("Invalid Expression Part: " + value);
     }
 
@@ -287,18 +288,18 @@ export const parseExpression = (function (): (expression: string) => (model: { [
             return () => numericValue;
         }
 
-        throw new Error("Invalid Expression: invalid constant format");
+        throw new Error("Invalid Expression: invalid constant format: " + value);
     }
 
     const innerParseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
-        return SimpleExpressionCaches.getParsedExpression(expression, parse);
+        return SimpleExpressions.getParsedExpression(expression, parse);
     };
 
     return innerParseExpression;
 })();
 
 export const executeExpression = (model: { [key: string]: any; }, expression: string | boolean): boolean => {
-    return SimpleExpressionCaches.get(expression).evaluate(model);
+    return SimpleExpressions.get(expression).evaluate(model);
 };
 
 export class SimpleExpression {
@@ -333,7 +334,7 @@ export class SimpleExpression {
             this._parsedExpression = () => expression;
         } else {
             if (!(typeof expression === 'string')) {
-                throw new Error("Invalid Expression: unsupported type");
+                throw new Error("Invalid Expression: unsupported type" + (typeof expression));
             }
 
             if (!expression) {
