@@ -244,44 +244,43 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         }
     }
 
-    const operatorRegex = /^\s*([a-zA-Z]+)\s*(\(.+?\))\s*$/;
-    const stringRegex = /^\s*\"(.*)\"\s*$/;
-
+    const operatorRegex = /^([a-zA-Z]+)\s*(\(.+?\))$/;
     const parse = (value: string): (model: { [key: string]: any; }) => any => {
-        switch (value.toLowerCase()) {
-            case 'true':
-                return () => true;
-            case 'false':
-                return () => false;
-            default:
-                const match = operatorRegex.exec(value);
-
-                if (match) {
-                    const operator: string = match[1];
-                    const body: string = match[2];
-                    return parseOperator(operator, body);
-                }
-
-                //return as constant since we didn't find an operator
-
-                if (value.indexOf('#') === 0) {
+        if (value.length > 1) {
+            const firstChar = value.charAt(0);
+            switch (firstChar) {
+                case '#':
                     value = value.substring(1);
                     return (model) => model[value];
-                }
-
-                const numericValue = parseFloat(value);
-                if (isNaN(numericValue)) {
-                    const stringMatch = stringRegex.exec(value);
-                    if (stringMatch) {
-                        const stringValue = stringMatch[1];
-                        return () => stringValue;
+                case '"':
+                case "'":
+                    if (value.charAt(value.length - 1) === firstChar) {
+                        value = value.substring(1, value.length - 1);
+                        return () => value;
                     }
+            }
 
-                    throw new Error("Invalid Expression: invalid constant format");
-                }
+            switch (value.toLowerCase()) {
+                case 'true':
+                    return () => true;
+                case 'false':
+                    return () => false;
+            }
 
-                return () => numericValue;
+            const operatorMatch = operatorRegex.exec(value);
+            if (operatorMatch) {
+                const operator: string = operatorMatch[1];
+                const body: string = operatorMatch[2];
+                return parseOperator(operator, body);
+            }
         }
+
+        const numericValue = parseFloat(value);
+        if (!isNaN(numericValue)) {
+            return () => numericValue;
+        }
+
+        throw new Error("Invalid Expression: invalid constant format");
     }
 
     const innerParseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
@@ -291,33 +290,34 @@ export const parseExpression = (function (): (expression: string) => (model: { [
     return innerParseExpression;
 })();
 
-export const executeExpression = (function (): (model: { [key: string]: any; }, expression: string | boolean) => boolean {
-    return (m, e) => {
-        return SimpleExpressionCaches.get(e).evaluate(m);
-    };
-})();
+export const executeExpression = (model: { [key: string]: any; }, expression: string | boolean): boolean => {
+    return SimpleExpressionCaches.get(expression).evaluate(model);
+};
 
 export class SimpleExpression {
     private readonly _parsedExpression: (model: { [key: string]: any; }) => any;
     private readonly _needsFlattening: boolean = false;
 
     private flattenObject(ob: any) {
-        var toReturn: any = {};
+        const toReturn: any = {};
 
-        for (var i in ob) {
+        for (const i in ob) {
             if (!ob.hasOwnProperty(i)) continue;
 
-            if ((typeof ob[i]) == 'object' && ob[i] !== null) {
-                var flatObject = this.flattenObject(ob[i]);
-                for (var x in flatObject) {
-                    if (!flatObject.hasOwnProperty(x)) continue;
-
+            if ((typeof ob[i]) === 'object' && ob[i] !== null) {
+                const flatObject = this.flattenObject(ob[i]);
+                for (const x in flatObject) {
+                    if (!flatObject.hasOwnProperty(x)) {
+                        continue;
+                    }
+                    
                     toReturn[i + '.' + x] = flatObject[x];
                 }
             } else {
                 toReturn[i] = ob[i];
             }
         }
+
         return toReturn;
     }
 
@@ -359,5 +359,4 @@ export class SimpleExpression {
 
         return !!this._parsedExpression(model);
     }
-
 }
