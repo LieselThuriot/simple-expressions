@@ -80,6 +80,10 @@ test('Invalid constant location throws', () => {
     expect(() => se.executeExpression({}, 'eq("te""st", "test")')).toThrow();
     expect(() => se.executeExpression({}, 'eq("te""st", "test"""""d")')).toThrow();
     expect(() => se.executeExpression({}, 'eq(",""," ",")')).toThrow();
+    expect(() => se.executeExpression({}, 'eq("test", "test\\")')).toThrow();
+    expect(() => se.executeExpression({}, 'eq("test\\", "test")')).toThrow();
+    expect(() => se.executeExpression({}, 'eq(123, "test\\" " " )')).toThrow();
+    expect(() => se.executeExpression({}, 'eq("test\\" " ", 123 )')).toThrow();
 });
 
 test('Invalid parameters throws', () => {
@@ -97,4 +101,5 @@ test('Constant boundaries are respected', () => {
     expect(se.executeExpression({}, 'eq(",", ",")')).toBe(true);
     expect(se.executeExpression({}, 'eq("\\",\\"", "\\",\\"")')).toBe(true);
     expect(se.executeExpression({}, 'eq("\',\'", "\',\'")')).toBe(true);
+    expect(se.executeExpression({}, 'eq(123, "test\\"" )')).toBe(false);
 });

@@ -1,18 +1,18 @@
 export class SimpleExpressions {
-    
-    /** @internal */ 
+
+    /** @internal */
     private static _enabledCaches: boolean = true;
-    
+
     // /** @internal */ 
     // private static _verboseLogging: boolean = false;
 
-    /** @internal */ 
+    /** @internal */
     private static _parseCache: { [key: string]: any; } = {
         'true': () => true,
         'false': () => false
     };
 
-    /** @internal */ 
+    /** @internal */
     private static _simpleCache: { [key: string]: SimpleExpression; } = {};
 
     // /** @internal */ 
@@ -21,8 +21,8 @@ export class SimpleExpressions {
     //         console.log(message, key, data);
     //     }
     // }
-    
-    /** @internal */ 
+
+    /** @internal */
     static get(e: string | boolean): SimpleExpression {
         const key = '' + e;
         if (this._enabledCaches) {
@@ -43,7 +43,7 @@ export class SimpleExpressions {
         return result;
     }
 
-    /** @internal */ 
+    /** @internal */
     static getParsedExpression(expression: string, factory: (value: string) => (model: { [key: string]: any; }) => any): (model: { [key: string]: any; }) => any {
         expression = expression.trim();
 
@@ -323,20 +323,34 @@ export const parseExpression = (function (): (expression: string) => (model: { [
                 case '#':
                     value = value.substring(1);
                     return (model) => model[value];
-                    
+
                 case '`':
                 case '"':
                 case "'":
                     if (value.charAt(value.length - 1) === firstChar) {
                         value = value.substring(1, value.length - 1);
                         const escapeCheckRegex = new RegExp('(?:\\\\)*' + firstChar, 'g');
-                
-                        escapeCheckRegex.exec(value)?.forEach((match) => {
-                            const backslashCount = match.length - 1;
-                            if (backslashCount % 2 === 0) {
-                                throw new Error("Invalid Expression: invalid constant format: " + value);
+
+                        {
+                            let match: RegExpExecArray | null;
+                            while ((match = escapeCheckRegex.exec(value)) !== null) {
+                                const backslashCount = match[0].length - 1;
+                                if (backslashCount % 2 === 0) {
+                                    throw new Error("Invalid Expression: invalid escaped constant: " + value);
+                                }
                             }
-                        });
+                        }
+                        
+                        {
+                            let match = value.match(/(?:\\)+$/);
+                            if (match) {
+                                const backslashCount = match[0].length;
+                                if (backslashCount % 2 !== 0) {
+                                    throw new Error("Invalid Expression: escaped constant ending: " + value);
+                                }
+                            }
+                        }
+
                         return () => value;
                     }
 
@@ -389,13 +403,13 @@ export const executeExpression = (model: { [key: string]: any; }, expression: st
 };
 
 export class SimpleExpression {
-    /** @internal */ 
+    /** @internal */
     private readonly _parsedExpression: (model: { [key: string]: any; }) => any;
-    
-    /** @internal */ 
+
+    /** @internal */
     private readonly _needsFlattening: boolean = false;
 
-    /** @internal */ 
+    /** @internal */
     private flattenObject(ob: any) {
         const toReturn: any = {};
 
