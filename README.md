@@ -12,6 +12,8 @@
 - gt
 - lt
 - empty
+- match (regexes)
+- concat
 
 ## Constants
 - true
@@ -114,6 +116,30 @@ console.log(`'${expr12}' for ${JSON.stringify(model12)} results in ${result12}`)
 const expr13 = ' AND (TRUE, empty( #text.innerText ) )  ';
 const result13 = executeExpression(model12, expr13);
 console.log(`'${expr13}' for ${JSON.stringify(model12)} results in ${result13}`);
+
+const model14 = {
+    'pattern': 'hello',
+    'test': 'hello there'
+};
+const expr14 = 'match(#test, concat("^", #pattern))';
+const result14 = executeExpression(model14, expr14);
+console.log(`'${expr14}' results in ${result14}`);
+
+const model15 = {
+    'pattern1': 'hello',
+    'pattern2': 'there',
+    'test': 'hello there'
+};
+const expr15 = 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))';
+const result15 = executeExpression(model15, expr15);
+console.log(`'${expr15}' results in ${result15}`);
+
+const model16 = {
+    'mail': 'test@test.com'
+}
+const expr16 = 'match(#mail, "^[^@]+@[^@]+\.[^@]+$")';
+const result16 = executeExpression(model16, expr16);
+console.log(`'${expr16}' for ${JSON.stringify(model16)} results in ${result16}`);
 ```
 
 Results:
@@ -134,4 +160,7 @@ false results in false
 ' AND (true,   not( empty( #text )) )  ' for {} results in false
 ' AND (true,   not( empty( #text.innerText )) )  ' for {"text":{"innerText":"test"}} results in true
 ' AND (true, empty( #text.innerText ) )  ' for {"text":{"innerText":"test"}} results in false
+'match(#test, concat("^", #pattern))' results in true
+'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))' results in false
+'match(#mail, "^[^@]+@[^@]+\.[^@]+$")' for {"mail":"test@test.com"} results in true
 ```

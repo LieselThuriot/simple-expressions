@@ -103,3 +103,40 @@ test('Constant boundaries are respected', () => {
     expect(se.executeExpression({}, 'eq("\',\'", "\',\'")')).toBe(true);
     expect(se.executeExpression({}, 'eq(123, "test\\"" )')).toBe(false);
 });
+
+test('Can match a regex', () => {
+    expect(se.executeExpression({ 'test': 'why hello there' }, 'match(#test, "hello")')).toBe(true);
+    expect(se.executeExpression({ 'test': 'why hello there' }, 'match(#test, "^hello")')).toBe(false);
+    expect(se.executeExpression({ 'test': 'why hello there' }, 'match(#test, "hello$")')).toBe(false);
+    expect(se.executeExpression({ 'test': 'hello' }, 'match(#test, "^hello$")')).toBe(true);
+    expect(se.executeExpression({ 'test': 'hello' }, 'match(#test, "[a-z]+")')).toBe(true);
+    expect(se.executeExpression({ 'test': '12345' }, 'match(#test, "[a-z]+")')).toBe(false);
+    expect(se.executeExpression({ 'test': '' }, 'match(#test, "[a-z]+")')).toBe(false);
+    expect(se.executeExpression({ 'test': '' }, 'match(#test, ".{0}")')).toBe(true);
+    expect(se.executeExpression({}, 'match(#test, ".+")')).toBe(false);
+    expect(se.executeExpression({ 'test': '123' }, 'match(#test, "")')).toBe(false);
+    expect(se.executeExpression({ 'mail': 'test@test.com' }, 'match(#mail, "^[^@]+@[^@]+\.[^@]+$")')).toBe(true);
+});
+
+test('Can match two regexes', () => {
+    expect(se.executeExpression({ 'test': 'why hello there' }, 'and(match(#test, "hello"), match(#test, "there"))')).toBe(true);
+});
+
+test('Can do complex things', () => {
+    expect(se.executeExpression({ 'test': 'why hello there' }, 'and(not(empty(#test)), and(match(#test, "hello"), match(#test, "there")))')).toBe(true);
+});
+
+test('Concatination', () => {
+    // These should probably throw since they're not boolean operators.
+    // For now we are ok with them returning a boolean in the end result.
+    expect(se.executeExpression({}, 'concat("test", "123")')).toBe(true);
+    expect(se.executeExpression({}, 'concat(#1, #2)')).toBe(false);
+    expect(se.executeExpression({ '1': '123' }, 'concat(#1, #2)')).toBe(true);
+});
+
+test('Concatination allows fancy regexes', () => {
+    expect(se.executeExpression({ 'pattern': 'hello there', 'test': 'hello there' }, 'match(#test, concat(concat("^", #pattern), "$"))')).toBe(true);
+    expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello there' }, 'and( match(#test, concat("^", #pattern1)), match(#test, concat(#pattern2, "$")) )')).toBe(true);
+    expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello there' }, 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))')).toBe(false);
+    expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello over there' }, 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))')).toBe(true);
+});

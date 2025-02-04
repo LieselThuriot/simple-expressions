@@ -121,6 +121,28 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         return value1 < value2;
     }
 
+    const evaluateRegex = (value: any, pattern: any): boolean => {
+        if (!!pattern && typeof pattern === 'string') {
+            const stringValue = !value
+                ? ''
+                : typeof value === 'string'
+                    ? value
+                    : value.toString();
+
+            const regex = new RegExp(pattern, 'g');
+            return regex.test(stringValue);
+        }
+
+        return false;
+    }
+
+    const concat = (value1: any, value2: any): string => {
+        const string1 = !!value1 ? value1.toString() : '';
+        const string2 = !!value2 ? value2.toString() : '';
+
+        return string1 + string2;
+    }
+
     const contains = (value1: any, value2: any): boolean => {
         if (typeof value1 === 'string') {
             return value1.indexOf(value2) >= 0;
@@ -277,7 +299,17 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         return (model) => lessThan(parameters.left(model), parameters.right(model));
     }
 
-    const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean => {
+    const parseRegex = (value: string): (model: { [key: string]: any; }) => boolean => {
+        const parameters = resolveParameters(value);
+        return (model) => evaluateRegex(parameters.left(model), parameters.right(model));
+    }
+
+    const parseConcat = (value: string): (model: { [key: string]: any; }) => string => {
+        const parameters = resolveParameters(value);
+        return (model) => concat(parameters.left(model), parameters.right(model));
+    }
+
+    const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean | string => {
         if (!operator) {
             throw new Error("Invalid Expression: no operator");
         }
@@ -306,6 +338,12 @@ export const parseExpression = (function (): (expression: string) => (model: { [
 
             case 'empty':
                 return parseEmpty(body);
+
+            case 'match':
+                return parseRegex(body);
+
+            case 'concat': // Special case since this is not a boolean
+                return parseConcat(body);
 
             default:
                 throw new Error("Invalid Operator: " + operator);
@@ -340,7 +378,7 @@ export const parseExpression = (function (): (expression: string) => (model: { [
                                 }
                             }
                         }
-                        
+
                         {
                             let match = value.match(/(?:\\)+$/);
                             if (match) {
