@@ -116,6 +116,11 @@ test('Can match a regex', () => {
     expect(se.executeExpression({}, 'match(#test, ".+")')).toBe(false);
     expect(se.executeExpression({ 'test': '123' }, 'match(#test, "")')).toBe(false);
     expect(se.executeExpression({ 'mail': 'test@test.com' }, 'match(#mail, "^[^@]+@[^@]+\.[^@]+$")')).toBe(true);
+    expect(se.executeExpression({ 'mail': 'test@test.com' }, "match(#mail, \"^[^@]+@[^@]+\\.[^@]+$\")")).toBe(true);
+    expect(se.executeExpression({ 'mail': 'test@test' }, "match(#mail, '^[^@]+@[^@]+\\.[^@]+$')")).toBe(false);
+    expect(se.executeExpression({ 'mail': 'test@test.com' }, "match(#mail, '^[^@]+@[^@]+\.[^@]+$')")).toBe(true);
+    expect(se.executeExpression({ 'mail': 'test@test.com' }, 'AND(NOT(EMPTY(#mail)), MATCH(#mail, "^test@test.com$"))')).toBe(true);
+    expect(se.executeExpression({ 'form': { 'mail': 'test@test.com' } }, 'AND(NOT(EMPTY(#form.mail)), MATCH(#form.mail, "^test@test.com$"))')).toBe(true);
 });
 
 test('Can match two regexes', () => {

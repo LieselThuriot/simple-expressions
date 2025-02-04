@@ -490,7 +490,8 @@ export class SimpleExpression {
                 throw new Error("Invalid Expression: whitespace");
             }
 
-            if (expression.indexOf('.') > 0) {
+            const flatteningRegex = /[,\(]\s*#\w+\.\w+\s*[,\)]/;
+            if (flatteningRegex.test(expression)) {
                 this._needsFlattening = true;
             }
 
