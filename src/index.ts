@@ -155,6 +155,22 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         return !value;
     }
 
+    const len = (value: any): number => {
+        if (value === undefined || value === null) {
+            return 0;
+        }
+
+        if (typeof value === 'string') {
+            return value.length;
+        }
+
+        if (value.hasOwnProperty('length')) {
+            return value.length;
+        }
+
+        throw new Error('Input does not have a length');
+    }
+
     const or = (value1: any, value2: any): boolean => {
         return !!value1 || !!value2;
     }
@@ -180,6 +196,11 @@ export const parseExpression = (function (): (expression: string) => (model: { [
     const parseNot = (value: string): (model: { [key: string]: any; }) => boolean => {
         const inner = parseSingleBody(value);
         return (model) => not(inner(model));
+    }
+
+    const parseLength = (value: string) : (model: { [key: string]: any; }) => number => {
+        const inner = parseSingleBody(value);
+        return (model) => len(inner(model));
     }
 
     const parseEmpty = (value: string): (model: { [key: string]: any; }) => boolean => {
@@ -309,7 +330,7 @@ export const parseExpression = (function (): (expression: string) => (model: { [
         return (model) => concat(parameters.left(model), parameters.right(model));
     }
 
-    const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean | string => {
+    const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean | string | number => {
         if (!operator) {
             throw new Error("Invalid Expression: no operator");
         }
@@ -338,6 +359,9 @@ export const parseExpression = (function (): (expression: string) => (model: { [
 
             case 'empty':
                 return parseEmpty(body);
+
+            case 'len':
+                return parseLength(body);
 
             case 'match':
                 return parseRegex(body);

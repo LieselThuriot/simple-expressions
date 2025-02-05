@@ -145,3 +145,16 @@ test('Concatination allows fancy regexes', () => {
     expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello there' }, 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))')).toBe(false);
     expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello over there' }, 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))')).toBe(true);
 });
+
+test('Can test input lengths', () => {
+    expect(se.executeExpression({ 'test': 'hello' }, 'lt(len(#test), 10)')).toBe(true);
+    expect(se.executeExpression({ 'test': 'hello' }, 'gt(len(#test), 10)')).toBe(false);
+    expect(se.executeExpression({ 'test': 'hello' }, 'eq(len(#test), 5)')).toBe(true);
+    expect(se.executeExpression({ 'test': 'hello' }, 'len(#test)')).toBe(true);
+    expect(se.executeExpression({ 'test': '' }, 'len(#test)')).toBe(false);
+    expect(se.executeExpression({ 'test': '' }, 'eq(len(#test), 0)')).toBe(true);
+    expect(se.executeExpression({}, 'len(#test)')).toBe(false);
+    expect(se.executeExpression({}, 'eq(len(#test), 0)')).toBe(true);
+    expect(se.executeExpression({}, 'eq(len("test"), 2)')).toBe(false);
+    expect(se.executeExpression({}, 'eq(len("test"), 4)')).toBe(true);
+});

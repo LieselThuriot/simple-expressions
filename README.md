@@ -13,7 +13,10 @@
 - lt
 - empty
 - match (regexes)
-- concat
+
+## Special cases
+- concat (string result)
+- len (numeric result)
 
 ## Constants
 - true
