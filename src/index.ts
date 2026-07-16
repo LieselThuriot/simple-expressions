@@ -1,5 +1,7 @@
 type Model = { [key: string]: any; };
 
+const unsafeReferenceSegments = new Set(['__proto__', 'constructor', 'prototype']);
+
 interface Evaluator {
     (model: Model): any;
     hasConstantValue?: boolean;
@@ -222,13 +224,13 @@ const referenceEvaluator = (path: string): Evaluator => {
     const segments = path.split('.');
 
     for (const segment of segments) {
-        if (!segment) {
+        if (!segment || unsafeReferenceSegments.has(segment)) {
             throw new Error('Invalid Expression: invalid model reference: #' + path);
         }
     }
 
     if (segments.length === 1) {
-        return (model) => model == null ? undefined : model[path];
+        return (model) => model == null || !Object.prototype.hasOwnProperty.call(model, path) ? undefined : model[path];
     }
 
     return (model) => {
@@ -242,7 +244,7 @@ const referenceEvaluator = (path: string): Evaluator => {
 
         let value: any = model;
         for (const segment of segments) {
-            if (value == null) {
+            if (value == null || !Object.prototype.hasOwnProperty.call(value, segment)) {
                 return undefined;
             }
             value = value[segment];
@@ -408,20 +410,22 @@ class ExpressionParser {
 const compileExpression = (expression: string): Evaluator => new ExpressionParser(expression).parse();
 
 export class SimpleExpressions {
+    private static _cacheLimit: number = 1000;
+
     /** @internal */
     private static _enabledCaches: boolean = true;
 
     /** @internal */
-    private static _parseCache: { [key: string]: Evaluator; } = Object.create(null) as { [key: string]: Evaluator; };
+    private static _parseCache: Map<string, Evaluator> = new Map<string, Evaluator>();
 
     /** @internal */
-    private static _simpleCache: { [key: string]: SimpleExpression; } = Object.create(null) as { [key: string]: SimpleExpression; };
+    private static _simpleCache: Map<string, SimpleExpression> = new Map<string, SimpleExpression>();
 
     /** @internal */
     static get(e: string | boolean): SimpleExpression {
         const key = '' + e;
         if (this._enabledCaches) {
-            const cachedExpression = this._simpleCache[key];
+            const cachedExpression = this._simpleCache.get(key);
             if (cachedExpression !== undefined) {
                 return cachedExpression;
             }
@@ -430,7 +434,7 @@ export class SimpleExpressions {
         const result = new SimpleExpression(e);
 
         if (this._enabledCaches) {
-            this._simpleCache[key] = result;
+            this.setCacheValue(this._simpleCache, key, result);
         }
 
         return result;
@@ -445,7 +449,7 @@ export class SimpleExpressions {
         }
 
         if (this._enabledCaches) {
-            const cachedExpression = this._parseCache[expression];
+            const cachedExpression = this._parseCache.get(expression);
             if (cachedExpression !== undefined) {
                 return cachedExpression;
             }
@@ -454,7 +458,7 @@ export class SimpleExpressions {
         const parsedResult = factory(expression);
 
         if (this._enabledCaches) {
-            this._parseCache[expression] = parsedResult;
+            this.setCacheValue(this._parseCache, expression, parsedResult);
         }
 
         return parsedResult;
@@ -466,20 +470,56 @@ export class SimpleExpressions {
         }
 
         if (options.parsed) {
-            this._parseCache = Object.create(null) as { [key: string]: Evaluator; };
+            this._parseCache.clear();
         }
 
         if (options.expression) {
-            this._simpleCache = Object.create(null) as { [key: string]: SimpleExpression; };
+            this._simpleCache.clear();
         }
     }
 
     public static disableCaches(): void {
         this._enabledCaches = false;
+        this.clear();
     }
 
     public static enableCaches(): void {
         this._enabledCaches = true;
+    }
+
+    public static setCacheLimit(limit: number): void {
+        if (!Number.isSafeInteger(limit)) {
+            throw new Error('Cache limit must be a safe integer');
+        }
+
+        if (limit <= 0) {
+            this.disableCaches();
+            return;
+        }
+
+        this._cacheLimit = limit;
+        this.trimCache(this._parseCache);
+        this.trimCache(this._simpleCache);
+    }
+
+    private static setCacheValue<T>(cache: Map<string, T>, key: string, value: T): void {
+        if (cache.size >= this._cacheLimit) {
+            const oldestKey = cache.keys().next().value;
+            if (oldestKey !== undefined) {
+                cache.delete(oldestKey);
+            }
+        }
+        cache.set(key, value);
+    }
+
+    private static trimCache<T>(cache: Map<string, T>): void {
+        while (cache.size > this._cacheLimit) {
+            const oldestKey = cache.keys().next().value;
+            if (oldestKey === undefined) {
+                return;
+            }
+            cache.delete(oldestKey);
+        }
     }
 }
 

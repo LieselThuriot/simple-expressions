@@ -3,11 +3,13 @@ import * as se from '..';
 
 beforeEach(() => {
     se.SimpleExpressions.enableCaches();
+    se.SimpleExpressions.setCacheLimit(1000);
     se.SimpleExpressions.clear();
 });
 
 afterEach(() => {
     se.SimpleExpressions.enableCaches();
+    se.SimpleExpressions.setCacheLimit(1000);
     se.SimpleExpressions.clear();
 });
 
@@ -129,10 +131,17 @@ describe('model references', () => {
         expect(expression({ value: { child: 'nested' }, 'value.child': undefined })).toBeUndefined();
     });
 
-    test('resolves inherited properties for single-segment references', () => {
+    test('does not resolve inherited properties', () => {
         const model = Object.create({ value: 'inherited' });
 
-        expect(se.parseExpression('#value')(model)).toBe('inherited');
+        expect(se.parseExpression('#value')(model)).toBeUndefined();
+        expect(se.parseExpression('#value.child')({ value: Object.create({ child: 'inherited' }) })).toBeUndefined();
+    });
+
+    test('rejects prototype-chain reference segments', () => {
+        expect(() => se.parseExpression('#__proto__')).toThrow('invalid model reference');
+        expect(() => se.parseExpression('#value.constructor')).toThrow('invalid model reference');
+        expect(() => se.parseExpression('#value.prototype.name')).toThrow('invalid model reference');
     });
 
     test('rejects empty or malformed model references', () => {
@@ -214,11 +223,21 @@ describe('public APIs and caches', () => {
         expect(se.parseExpression('true')).not.toBe(parsed);
         expect(se.SimpleExpressions.get('true')).not.toBe(expression);
 
-        se.SimpleExpressions.clear();
         se.SimpleExpressions.enableCaches();
 
         expect(se.parseExpression('true')).toBe(se.parseExpression('true'));
         expect(se.SimpleExpressions.get('true')).toBe(se.SimpleExpressions.get('true'));
+    });
+
+    test('disabling caches clears entries before they are re-enabled', () => {
+        const parsed = se.parseExpression('true');
+        const expression = se.SimpleExpressions.get('true');
+
+        se.SimpleExpressions.disableCaches();
+        se.SimpleExpressions.enableCaches();
+
+        expect(se.parseExpression('true')).not.toBe(parsed);
+        expect(se.SimpleExpressions.get('true')).not.toBe(expression);
     });
 
     test('cached evaluators continue to use the model passed at evaluation time', () => {
@@ -226,5 +245,40 @@ describe('public APIs and caches', () => {
 
         expect(expression({ value: 'first' })).toBe('first');
         expect(expression({ value: 'second' })).toBe('second');
+    });
+
+    test('caches discard their oldest entries at the size limit', () => {
+        const parsed = se.parseExpression('true');
+        const expression = se.SimpleExpressions.get('true');
+
+        for (let index = 0; index < 1000; index++) {
+            se.parseExpression('"parsed-' + index + '"');
+            se.SimpleExpressions.get('"expression-' + index + '"');
+        }
+
+        expect(se.parseExpression('true')).not.toBe(parsed);
+        expect(se.SimpleExpressions.get('true')).not.toBe(expression);
+    });
+
+    test('cache limits can be updated and evict existing oldest entries', () => {
+        const first = se.parseExpression('"first"');
+        const second = se.parseExpression('"second"');
+
+        se.SimpleExpressions.setCacheLimit(1);
+
+        expect(se.parseExpression('"second"')).toBe(second);
+        expect(se.parseExpression('"first"')).not.toBe(first);
+    });
+
+    test.each([0, -1])('non-positive cache limits disable caches', (limit) => {
+        const first = se.parseExpression('true');
+
+        se.SimpleExpressions.setCacheLimit(limit);
+
+        expect(se.parseExpression('true')).not.toBe(first);
+    });
+
+    test.each([1.5, Number.MAX_SAFE_INTEGER + 1])('rejects invalid cache limit %j', (limit) => {
+        expect(() => se.SimpleExpressions.setCacheLimit(limit)).toThrow('safe integer');
     });
 });

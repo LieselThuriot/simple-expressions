@@ -1,8 +1,25 @@
 {
   "name": "simple-expressions",
   "version": "0.1.0",
+  "description": "Simple expression parsing and execution",
   "main": "lib/index.js",
+  "types": "./lib/index.d.ts",
   "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
@@ -15,14 +32,11 @@
   ],
   "author": "Liesel Thuriot",
   "license": "ISC",
-  "description": "Simple expression parsing and execution",
   "scripts": {
-    "build": "tsc",
-    "test": "npm run build && vitest run"
-  },
-  "types": "./lib\\index.d.ts",
-  "directories": {
-    "lib": "lib"
+    "build": "node scripts/clean.js && tsc",
+    "test": "npm run build && vitest run",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm test"
   },
   "repository": {
     "type": "git",
