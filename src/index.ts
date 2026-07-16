@@ -193,6 +193,18 @@ const contains = (value1: any, value2: any): boolean => {
     return typeof value1 === 'string' && value1.indexOf(value2) >= 0;
 };
 
+const startsWith = (value1: any, value2: any): boolean => {
+    return typeof value1 === 'string' && value1.startsWith(value2);
+};
+
+const endsWith = (value1: any, value2: any): boolean => {
+    return typeof value1 === 'string' && value1.endsWith(value2);
+};
+
+const lower = (value: any): string => regexInput(value).toLowerCase();
+
+const upper = (value: any): string => regexInput(value).toUpperCase();
+
 const len = (value: any): number => {
     if (value === undefined || value === null) {
         return 0;
@@ -332,28 +344,49 @@ class ExpressionParser {
         this.tokenizer.next();
 
         const right = this.parseValue();
-        if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
-            this.fail('operator ' + operator + ' expects two arguments');
+
+        if (arity === 2) {
+            if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
+                this.fail('operator ' + operator + ' expects two arguments');
+            }
+            this.tokenizer.next();
+            return this.compileBinary(normalizedOperator, left, right);
+        }
+
+        if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
+            this.fail('operator ' + operator + ' expects three arguments');
         }
         this.tokenizer.next();
-        return this.compileBinary(normalizedOperator, left, right);
+
+        const whenFalse = this.parseValue();
+        if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
+            this.fail('operator ' + operator + ' expects three arguments');
+        }
+        this.tokenizer.next();
+        return this.compileTernary(normalizedOperator, left, right, whenFalse);
     }
 
-    private operatorArity(operator: string): 1 | 2 {
+    private operatorArity(operator: string): 1 | 2 | 3 {
         switch (operator) {
             case 'not':
             case 'empty':
             case 'len':
+            case 'lower':
+            case 'upper':
                 return 1;
             case 'eq':
             case 'or':
             case 'and':
             case 'contains':
+            case 'startswith':
+            case 'endswith':
             case 'gt':
             case 'lt':
             case 'match':
             case 'concat':
                 return 2;
+            case 'if':
+                return 3;
             default:
                 this.fail('invalid operator: ' + operator);
         }
@@ -367,6 +400,10 @@ class ExpressionParser {
                 return (model) => empty(inner(model));
             case 'len':
                 return (model) => len(inner(model));
+            case 'lower':
+                return (model) => lower(inner(model));
+            case 'upper':
+                return (model) => upper(inner(model));
             default:
                 this.fail('invalid operator: ' + operator);
         }
@@ -382,6 +419,10 @@ class ExpressionParser {
                 return (model) => !!left(model) && !!right(model);
             case 'contains':
                 return (model) => contains(left(model), right(model));
+            case 'startswith':
+                return (model) => startsWith(left(model), right(model));
+            case 'endswith':
+                return (model) => endsWith(left(model), right(model));
             case 'gt':
                 return (model) => greaterThan(left(model), right(model));
             case 'lt':
@@ -397,6 +438,15 @@ class ExpressionParser {
                     return constantEvaluator(concat(left.constantValue, right.constantValue));
                 }
                 return (model) => concat(left(model), right(model));
+            default:
+                this.fail('invalid operator: ' + operator);
+        }
+    }
+
+    private compileTernary(operator: string, condition: Evaluator, whenTrue: Evaluator, whenFalse: Evaluator): Evaluator {
+        switch (operator) {
+            case 'if':
+                return (model) => condition(model) ? whenTrue(model) : whenFalse(model);
             default:
                 this.fail('invalid operator: ' + operator);
         }

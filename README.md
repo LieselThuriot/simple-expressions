@@ -46,12 +46,17 @@ Operators are case-insensitive:
 | `or` | 2 | Logical OR with short-circuit evaluation. |
 | `and` | 2 | Logical AND with short-circuit evaluation. |
 | `contains` | 2 | Case-sensitive string containment; the left value must be a string. |
+| `startswith` | 2 | Case-sensitive string prefix matching; the left value must be a string. |
+| `endswith` | 2 | Case-sensitive string suffix matching; the left value must be a string. |
 | `gt` | 2 | JavaScript greater-than comparison. |
 | `lt` | 2 | JavaScript less-than comparison. |
 | `empty` | 1 | True for `null`, `undefined`, and empty strings. |
 | `len` | 1 | A string length or an own `length` property; throws otherwise. |
+| `lower` | 1 | Converts a value to lowercase text; falsey values become empty strings. |
+| `upper` | 1 | Converts a value to uppercase text; falsey values become empty strings. |
 | `concat` | 2 | Concatenates truthy values after calling `toString()`; falsy values become empty strings. |
 | `match` | 2 | Tests a value against a JavaScript regular expression pattern. |
+| `if` | 3 | Returns the second or third argument based on the truthiness of the first; only the selected branch is evaluated. |
 
 Unquoted identifiers are operators and must be followed by parentheses. They are not string constants.
 
