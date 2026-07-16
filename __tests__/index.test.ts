@@ -1,3 +1,5 @@
+import { expect, test } from 'vitest';
+
 const se = require('../lib/index');
 
 test('simple true results in true', () => {
