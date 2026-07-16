@@ -1,34 +1,428 @@
-export class SimpleExpressions {
+type Model = { [key: string]: any; };
 
+interface Evaluator {
+    (model: Model): any;
+    hasConstantValue?: boolean;
+    constantValue?: any;
+}
+
+enum TokenKind {
+    End,
+    Identifier,
+    Number,
+    String,
+    Reference,
+    OpenParen,
+    CloseParen,
+    Comma
+}
+
+class Tokenizer {
+    private index: number = 0;
+    private _kind: TokenKind = TokenKind.End;
+    private _value: string = '';
+
+    public constructor(private readonly source: string) {
+        this.next();
+    }
+
+    public get kind(): TokenKind {
+        return this._kind;
+    }
+
+    public get value(): string {
+        return this._value;
+    }
+
+    public get position(): number {
+        return this.index;
+    }
+
+    public next(): void {
+        const length = this.source.length;
+
+        while (this.index < length && this.source.charCodeAt(this.index) <= 32) {
+            this.index++;
+        }
+
+        if (this.index >= length) {
+            this._kind = TokenKind.End;
+            this._value = '';
+            return;
+        }
+
+        const start = this.index;
+        const character = this.source.charAt(this.index);
+
+        switch (character) {
+            case '(':
+                this.index++;
+                this._kind = TokenKind.OpenParen;
+                this._value = character;
+                return;
+            case ')':
+                this.index++;
+                this._kind = TokenKind.CloseParen;
+                this._value = character;
+                return;
+            case ',':
+                this.index++;
+                this._kind = TokenKind.Comma;
+                this._value = character;
+                return;
+            case '#':
+                this.index++;
+                this.readDelimitedToken();
+                if (this.index === start + 1) {
+                    this.fail('missing model reference');
+                }
+                this._kind = TokenKind.Reference;
+                this._value = this.source.substring(start + 1, this.index);
+                return;
+            case '`':
+            case '"':
+            case "'":
+                this.readString(character);
+                return;
+        }
+
+        if (this.isIdentifierStart(character)) {
+            this.index++;
+            while (this.index < length && this.isIdentifierPart(this.source.charAt(this.index))) {
+                this.index++;
+            }
+            this._kind = TokenKind.Identifier;
+            this._value = this.source.substring(start, this.index);
+            return;
+        }
+
+        this.readDelimitedToken();
+        const value = this.source.substring(start, this.index);
+        if (Tokenizer.numericPattern.test(value)) {
+            this._kind = TokenKind.Number;
+            this._value = value;
+            return;
+        }
+
+        this.fail('unexpected token ' + value);
+    }
+
+    private static readonly numericPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+    private readDelimitedToken(): void {
+        while (this.index < this.source.length) {
+            const character = this.source.charAt(this.index);
+            if (character === '(' || character === ')' || character === ',' || character.charCodeAt(0) <= 32) {
+                return;
+            }
+            this.index++;
+        }
+    }
+
+    private readString(quote: string): void {
+        const start = this.index + 1;
+        this.index++;
+        let backslashCount = 0;
+
+        while (this.index < this.source.length) {
+            const character = this.source.charAt(this.index);
+
+            if (character === '\\') {
+                backslashCount++;
+                this.index++;
+                continue;
+            }
+
+            if (character === quote && backslashCount % 2 === 0) {
+                this._kind = TokenKind.String;
+                this._value = this.source.substring(start, this.index);
+                this.index++;
+                return;
+            }
+
+            backslashCount = 0;
+            this.index++;
+        }
+
+        this.fail('unterminated string');
+    }
+
+    private isIdentifierStart(character: string): boolean {
+        const code = character.charCodeAt(0);
+        return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+    }
+
+    private isIdentifierPart(character: string): boolean {
+        return this.isIdentifierStart(character);
+    }
+
+    private fail(message: string): never {
+        throw new Error('Invalid Expression at ' + this.index + ': ' + message);
+    }
+}
+
+const equals = (value1: any, value2: any): boolean => value1 == value2;
+const greaterThan = (value1: any, value2: any): boolean => value1 > value2;
+const lessThan = (value1: any, value2: any): boolean => value1 < value2;
+
+const regexInput = (value: any): string => {
+    return !value ? '' : typeof value === 'string' ? value : value.toString();
+};
+
+const evaluateRegex = (value: any, pattern: any): boolean => {
+    if (!!pattern && typeof pattern === 'string') {
+        return new RegExp(pattern).test(regexInput(value));
+    }
+
+    return false;
+};
+
+const evaluateCompiledRegex = (value: any, regex: RegExp): boolean => {
+    return regex.test(regexInput(value));
+};
+
+const concat = (value1: any, value2: any): string => {
+    const string1 = !!value1 ? value1.toString() : '';
+    const string2 = !!value2 ? value2.toString() : '';
+    return string1 + string2;
+};
+
+const contains = (value1: any, value2: any): boolean => {
+    return typeof value1 === 'string' && value1.indexOf(value2) >= 0;
+};
+
+const len = (value: any): number => {
+    if (value === undefined || value === null) {
+        return 0;
+    }
+
+    if (typeof value === 'string') {
+        return value.length;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(value, 'length')) {
+        return value.length;
+    }
+
+    throw new Error('Input does not have a length');
+};
+
+const empty = (value: any): boolean => {
+    return value === undefined || value === null || (typeof value === 'string' && value.length === 0);
+};
+
+const constantEvaluator = (value: any): Evaluator => {
+    const evaluator: Evaluator = () => value;
+    evaluator.hasConstantValue = true;
+    evaluator.constantValue = value;
+    return evaluator;
+};
+
+const referenceEvaluator = (path: string): Evaluator => {
+    const segments = path.split('.');
+
+    for (const segment of segments) {
+        if (!segment) {
+            throw new Error('Invalid Expression: invalid model reference: #' + path);
+        }
+    }
+
+    if (segments.length === 1) {
+        return (model) => model == null ? undefined : model[path];
+    }
+
+    return (model) => {
+        if (model == null) {
+            return undefined;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(model, path)) {
+            return model[path];
+        }
+
+        let value: any = model;
+        for (const segment of segments) {
+            if (value == null) {
+                return undefined;
+            }
+            value = value[segment];
+        }
+        return value;
+    };
+};
+
+class ExpressionParser {
+    private readonly tokenizer: Tokenizer;
+
+    public constructor(expression: string) {
+        this.tokenizer = new Tokenizer(expression);
+    }
+
+    public parse(): Evaluator {
+        const result = this.parseValue();
+        if (this.tokenizer.kind !== TokenKind.End) {
+            this.fail('unexpected trailing input');
+        }
+        return result;
+    }
+
+    private parseValue(): Evaluator {
+        switch (this.tokenizer.kind) {
+            case TokenKind.String: {
+                const value = this.tokenizer.value;
+                this.tokenizer.next();
+                return constantEvaluator(value);
+            }
+            case TokenKind.Number: {
+                const value = Number(this.tokenizer.value);
+                this.tokenizer.next();
+                return constantEvaluator(value);
+            }
+            case TokenKind.Reference: {
+                const path = this.tokenizer.value;
+                this.tokenizer.next();
+                return referenceEvaluator(path);
+            }
+            case TokenKind.Identifier: {
+                const identifier = this.tokenizer.value;
+                this.tokenizer.next();
+
+                if (identifier.toLowerCase() === 'true') {
+                    return constantEvaluator(true);
+                }
+                if (identifier.toLowerCase() === 'false') {
+                    return constantEvaluator(false);
+                }
+
+                return this.parseCall(identifier);
+            }
+            default:
+                this.fail('expected an expression');
+        }
+    }
+
+    private parseCall(operator: string): Evaluator {
+        if (this.tokenizer.kind !== TokenKind.OpenParen) {
+            this.fail('invalid operator: ' + operator);
+        }
+
+        const normalizedOperator = operator.toLowerCase();
+        const arity = this.operatorArity(normalizedOperator);
+        this.tokenizer.next();
+
+        if ((this.tokenizer.kind as TokenKind) === TokenKind.CloseParen) {
+            this.fail('missing operator argument');
+        }
+
+        const left = this.parseValue();
+
+        if (arity === 1) {
+            if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
+                this.fail('operator ' + operator + ' expects one argument');
+            }
+            this.tokenizer.next();
+            return this.compileUnary(normalizedOperator, left);
+        }
+
+        if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
+            this.fail('operator ' + operator + ' expects two arguments');
+        }
+        this.tokenizer.next();
+
+        const right = this.parseValue();
+        if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
+            this.fail('operator ' + operator + ' expects two arguments');
+        }
+        this.tokenizer.next();
+        return this.compileBinary(normalizedOperator, left, right);
+    }
+
+    private operatorArity(operator: string): 1 | 2 {
+        switch (operator) {
+            case 'not':
+            case 'empty':
+            case 'len':
+                return 1;
+            case 'eq':
+            case 'or':
+            case 'and':
+            case 'contains':
+            case 'gt':
+            case 'lt':
+            case 'match':
+            case 'concat':
+                return 2;
+            default:
+                this.fail('invalid operator: ' + operator);
+        }
+    }
+
+    private compileUnary(operator: string, inner: Evaluator): Evaluator {
+        switch (operator) {
+            case 'not':
+                return (model) => !inner(model);
+            case 'empty':
+                return (model) => empty(inner(model));
+            case 'len':
+                return (model) => len(inner(model));
+            default:
+                this.fail('invalid operator: ' + operator);
+        }
+    }
+
+    private compileBinary(operator: string, left: Evaluator, right: Evaluator): Evaluator {
+        switch (operator) {
+            case 'eq':
+                return (model) => equals(left(model), right(model));
+            case 'or':
+                return (model) => !!left(model) || !!right(model);
+            case 'and':
+                return (model) => !!left(model) && !!right(model);
+            case 'contains':
+                return (model) => contains(left(model), right(model));
+            case 'gt':
+                return (model) => greaterThan(left(model), right(model));
+            case 'lt':
+                return (model) => lessThan(left(model), right(model));
+            case 'match':
+                if (right.hasConstantValue && !!right.constantValue && typeof right.constantValue === 'string') {
+                    const regex = new RegExp(right.constantValue);
+                    return (model) => evaluateCompiledRegex(left(model), regex);
+                }
+                return (model) => evaluateRegex(left(model), right(model));
+            case 'concat':
+                if (left.hasConstantValue && right.hasConstantValue) {
+                    return constantEvaluator(concat(left.constantValue, right.constantValue));
+                }
+                return (model) => concat(left(model), right(model));
+            default:
+                this.fail('invalid operator: ' + operator);
+        }
+    }
+
+    private fail(message: string): never {
+        throw new Error('Invalid Expression at ' + this.tokenizer.position + ': ' + message);
+    }
+}
+
+const compileExpression = (expression: string): Evaluator => new ExpressionParser(expression).parse();
+
+export class SimpleExpressions {
     /** @internal */
     private static _enabledCaches: boolean = true;
 
-    // /** @internal */ 
-    // private static _verboseLogging: boolean = false;
+    /** @internal */
+    private static _parseCache: { [key: string]: Evaluator; } = Object.create(null) as { [key: string]: Evaluator; };
 
     /** @internal */
-    private static _parseCache: { [key: string]: any; } = {
-        'true': () => true,
-        'false': () => false
-    };
-
-    /** @internal */
-    private static _simpleCache: { [key: string]: SimpleExpression; } = {};
-
-    // /** @internal */ 
-    // static logVerbose(message: string, key: string, data: any) {
-    //     if (this._verboseLogging) {
-    //         console.log(message, key, data);
-    //     }
-    // }
+    private static _simpleCache: { [key: string]: SimpleExpression; } = Object.create(null) as { [key: string]: SimpleExpression; };
 
     /** @internal */
     static get(e: string | boolean): SimpleExpression {
         const key = '' + e;
         if (this._enabledCaches) {
             const cachedExpression = this._simpleCache[key];
-            if (cachedExpression) {
-                //this.logVerbose('Resolved Simple Expression from cache', key, cachedExpression);
+            if (cachedExpression !== undefined) {
                 return cachedExpression;
             }
         }
@@ -37,25 +431,22 @@ export class SimpleExpressions {
 
         if (this._enabledCaches) {
             this._simpleCache[key] = result;
-            //this.logVerbose('Cached Simple Expression', key, result);
         }
 
         return result;
     }
 
     /** @internal */
-    static getParsedExpression(expression: string, factory: (value: string) => (model: { [key: string]: any; }) => any): (model: { [key: string]: any; }) => any {
+    static getParsedExpression(expression: string, factory: (value: string) => Evaluator): Evaluator {
         expression = expression.trim();
 
         if (expression === '') {
-            //this.logVerbose('Invalid Expression: formatting', expression, {});
-            throw new Error("Invalid Expression: formatting");
+            throw new Error('Invalid Expression: formatting');
         }
 
         if (this._enabledCaches) {
             const cachedExpression = this._parseCache[expression];
-            if (cachedExpression) {
-                //this.logVerbose('Resolved Parsed Expression from cache', expression, cachedExpression);
+            if (cachedExpression !== undefined) {
                 return cachedExpression;
             }
         }
@@ -64,470 +455,65 @@ export class SimpleExpressions {
 
         if (this._enabledCaches) {
             this._parseCache[expression] = parsedResult;
-            //this.logVerbose('Cached Parsed Expression', expression, parsedResult);
         }
 
         return parsedResult;
     }
 
-    public static clear(options?: { parsed?: boolean, expression?: boolean }) {
+    public static clear(options?: { parsed?: boolean, expression?: boolean }): void {
         if (!options) {
-            options = {
-                parsed: true,
-                expression: true
-            };
+            options = { parsed: true, expression: true };
         }
 
-        if (!!options.parsed) {
-            this._parseCache = {
-                'true': () => true,
-                'false': () => false
-            };
+        if (options.parsed) {
+            this._parseCache = Object.create(null) as { [key: string]: Evaluator; };
         }
 
-        if (!!options.expression) {
-            this._simpleCache = {};
+        if (options.expression) {
+            this._simpleCache = Object.create(null) as { [key: string]: SimpleExpression; };
         }
     }
 
-    public static disableCaches() {
+    public static disableCaches(): void {
         this._enabledCaches = false;
     }
 
-    public static enableChaches() {
+    public static enableCaches(): void {
         this._enabledCaches = true;
     }
-
-    // /** @internal */ 
-    // static verbose(value?: boolean) {
-    //     if (value === undefined) {
-    //         this._verboseLogging = true;
-    //     } else {
-    //         this._verboseLogging = value;
-    //     }
-    // }
 }
 
-export const parseExpression = (function (): (expression: string) => (model: { [key: string]: any; }) => any {
-    const equals = (value1: any, value2: any): boolean => {
-        return value1 == value2;
-    }
-
-    const greaterThan = (value1: any, value2: any): boolean => {
-        return value1 > value2;
-    }
-
-    const lessThan = (value1: any, value2: any): boolean => {
-        return value1 < value2;
-    }
-
-    const evaluateRegex = (value: any, pattern: any): boolean => {
-        if (!!pattern && typeof pattern === 'string') {
-            const stringValue = !value
-                ? ''
-                : typeof value === 'string'
-                    ? value
-                    : value.toString();
-
-            const regex = new RegExp(pattern, 'g');
-            return regex.test(stringValue);
-        }
-
-        return false;
-    }
-
-    const concat = (value1: any, value2: any): string => {
-        const string1 = !!value1 ? value1.toString() : '';
-        const string2 = !!value2 ? value2.toString() : '';
-
-        return string1 + string2;
-    }
-
-    const contains = (value1: any, value2: any): boolean => {
-        if (typeof value1 === 'string') {
-            return value1.indexOf(value2) >= 0;
-        }
-
-        return false;
-    }
-
-    const not = (value: any): boolean => {
-        return !value;
-    }
-
-    const len = (value: any): number => {
-        if (value === undefined || value === null) {
-            return 0;
-        }
-
-        if (typeof value === 'string') {
-            return value.length;
-        }
-
-        if (value.hasOwnProperty('length')) {
-            return value.length;
-        }
-
-        throw new Error('Input does not have a length');
-    }
-
-    const or = (value1: any, value2: any): boolean => {
-        return !!value1 || !!value2;
-    }
-
-    const and = (value1: any, value2: any): boolean => {
-        return !!value1 && !!value2;
-    }
-
-    const empty = (value: any): boolean => {
-        if (value === undefined || value === null) {
-            return true;
-        }
-
-        if (typeof value === 'string' && value.length === 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    const parseSingleBody = (value: any) => innerParseExpression(value.replace(/^\s*\(/, '').replace(/\)\s*$/, ''));
-
-    const parseNot = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const inner = parseSingleBody(value);
-        return (model) => not(inner(model));
-    }
-
-    const parseLength = (value: string) : (model: { [key: string]: any; }) => number => {
-        const inner = parseSingleBody(value);
-        return (model) => len(inner(model));
-    }
-
-    const parseEmpty = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const inner = parseSingleBody(value);
-        return (model) => empty(inner(model));
-    }
-
-    const resolveParameters = (value: string): { left: (model: { [key: string]: any; }) => boolean; right: (model: { [key: string]: any; }) => boolean } => {
-        let bracketCount = 0;
-        let constantStart: string | boolean = false;
-        let canConstantStart = true;
-
-        //SimpleExpressions.logVerbose('Resolving Parameters', value, { bracketCount, constantStart, canConstantStart });
-
-        for (let i = 0; i < value.length; i++) {
-            const character = value.charAt(i);
-            switch (character) {
-                case '(':
-                    if (!constantStart) {
-                        bracketCount++;
-                    }
-                    //SimpleExpressions.logVerbose('Open Bracket at ' + i, value, { bracketCount, constantStart, canConstantStart });
-                    break;
-                case ')':
-                    if (!constantStart) {
-                        bracketCount--;
-                    }
-                    //SimpleExpressions.logVerbose('Close Bracket at ' + i, value, { bracketCount, constantStart, canConstantStart });
-                    break;
-
-                case '`':
-                case '"':
-                case "'":
-                    if (!constantStart) {
-                        //SimpleExpressions.logVerbose('Constant Start at ' + i, value, { bracketCount, constantStart, canConstantStart, character });
-                        if (canConstantStart) {
-                            constantStart = character;
-                            canConstantStart = false;
-                        } else {
-                            throw new Error("Invalid Expression: invalid constant start: " + value);
-                        }
-                    } else if (constantStart === character) {
-                        let backslashCount = 0;
-                        let backslashIndex = i - 1;
-                        while (backslashIndex >= 0 && value.charAt(backslashIndex) === '\\') {
-                            backslashCount++;
-                            backslashIndex--;
-                        }
-
-                        if (backslashCount > 0 && backslashCount % 2 !== 0) {
-                            //SimpleExpressions.logVerbose('Escaped Constant at ' + i, value, { bracketCount, constantStart, canConstantStart, character, backslashCount, backslashIndex });
-                        } else {
-                            //SimpleExpressions.logVerbose('End of Constant at ' + i, value, { bracketCount, constantStart, canConstantStart, character, backslashCount, backslashIndex });
-                            constantStart = false;
-                        }
-                    }
-
-                    //SimpleExpressions.logVerbose('Constant at ' + i, value, { bracketCount, constantStart, canConstantStart, character });
-                    break;
-
-                case ',':
-                    if (!constantStart) {
-                        if (bracketCount === 1) {
-                            const leftBody = value.substring(1, i);
-                            //SimpleExpressions.logVerbose('Left Body', value, { leftBody });
-                            const left = innerParseExpression(leftBody);
-
-                            const rightBody = value.substring(i + 1).replace(/^\s*$/, '');
-                            //SimpleExpressions.logVerbose('Right Body', value, { rightBody });
-                            if (rightBody.charAt(rightBody.length - 1) !== ')') {
-                                throw new Error("Invalid Expression: missing closing bracket: " + rightBody);
-                            }
-
-                            const right = innerParseExpression(rightBody.substring(0, rightBody.length - 1));
-
-                            return { left, right };
-                        }
-
-                        canConstantStart = true;
-                    }
-
-                    //SimpleExpressions.logVerbose('Comma at ' + i, value, { bracketCount, constantStart, canConstantStart });
-                    break;
-            }
-        }
-
-        throw new Error("Invalid Expression Part: " + value);
-    }
-
-    const parseEquals = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => equals(parameters.left(model), parameters.right(model));
-    }
-
-    const parseOr = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => or(parameters.left(model), parameters.right(model));
-    }
-
-    const parseAnd = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => and(parameters.left(model), parameters.right(model));
-    }
-
-    const parseContains = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => contains(parameters.left(model), parameters.right(model));
-    }
-
-    const parseGreaterThan = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => greaterThan(parameters.left(model), parameters.right(model));
-    }
-
-    const parseLessThan = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => lessThan(parameters.left(model), parameters.right(model));
-    }
-
-    const parseRegex = (value: string): (model: { [key: string]: any; }) => boolean => {
-        const parameters = resolveParameters(value);
-        return (model) => evaluateRegex(parameters.left(model), parameters.right(model));
-    }
-
-    const parseConcat = (value: string): (model: { [key: string]: any; }) => string => {
-        const parameters = resolveParameters(value);
-        return (model) => concat(parameters.left(model), parameters.right(model));
-    }
-
-    const parseOperator = (operator: string, body: string): (model: { [key: string]: any; }) => boolean | string | number => {
-        if (!operator) {
-            throw new Error("Invalid Expression: no operator");
-        }
-
-        switch (operator.toLowerCase()) {
-            case 'not':
-                return parseNot(body);
-
-            case 'eq':
-                return parseEquals(body);
-
-            case 'or':
-                return parseOr(body);
-
-            case 'and':
-                return parseAnd(body);
-
-            case 'contains':
-                return parseContains(body);
-
-            case 'gt':
-                return parseGreaterThan(body);
-
-            case 'lt':
-                return parseLessThan(body);
-
-            case 'empty':
-                return parseEmpty(body);
-
-            case 'len':
-                return parseLength(body);
-
-            case 'match':
-                return parseRegex(body);
-
-            case 'concat': // Special case since this is not a boolean
-                return parseConcat(body);
-
-            default:
-                throw new Error("Invalid Operator: " + operator);
-        }
-    }
-
-    const operatorRegex = /^([a-zA-Z]+)\s*(\(.+?\))$/;
-
-    const parse = (value: string): (model: { [key: string]: any; }) => any => {
-        //SimpleExpressions.logVerbose('Parsing', value, null);
-
-        if (value.length > 1) {
-            const firstChar = value.charAt(0);
-            switch (firstChar) {
-                case '#':
-                    value = value.substring(1);
-                    return (model) => model[value];
-
-                case '`':
-                case '"':
-                case "'":
-                    if (value.charAt(value.length - 1) === firstChar) {
-                        value = value.substring(1, value.length - 1);
-                        const escapeCheckRegex = new RegExp('(?:\\\\)*' + firstChar, 'g');
-
-                        {
-                            let match: RegExpExecArray | null;
-                            while ((match = escapeCheckRegex.exec(value)) !== null) {
-                                const backslashCount = match[0].length - 1;
-                                if (backslashCount % 2 === 0) {
-                                    throw new Error("Invalid Expression: invalid escaped constant: " + value);
-                                }
-                            }
-                        }
-
-                        {
-                            let match = value.match(/(?:\\)+$/);
-                            if (match) {
-                                const backslashCount = match[0].length;
-                                if (backslashCount % 2 !== 0) {
-                                    throw new Error("Invalid Expression: escaped constant ending: " + value);
-                                }
-                            }
-                        }
-
-                        return () => value;
-                    }
-
-                    throw new Error("Invalid Expression: end quotes don't match starting quotes for constant: " + value);
-            }
-
-            switch (value.toLowerCase()) {
-                case 'true':
-                    return () => true;
-                case 'false':
-                    return () => false;
-            }
-
-            const operatorMatch = operatorRegex.exec(value);
-            if (operatorMatch) {
-                const operator = operatorMatch[1];
-
-                if (!operator) {
-                    throw new Error("Invalid Operator: " + operator)
-                }
-
-                const body = operatorMatch[2];
-
-                if (!body) {
-                    throw new Error("Invalid body: " + body)
-                }
-
-                return parseOperator(operator, body);
-            }
-        }
-
-        const numericValue = parseFloat(value);
-        if (!isNaN(numericValue)) {
-            return () => numericValue;
-        }
-
-        //SimpleExpressions.logVerbose('Invalid Constant', value, {});
-        throw new Error("Invalid Expression: invalid constant format: " + value);
-    }
-
-    const innerParseExpression = (expression: string): (model: { [key: string]: any; }) => any => {
-        return SimpleExpressions.getParsedExpression(expression, parse);
-    };
-
-    return innerParseExpression;
-})();
-
-export const executeExpression = (model: { [key: string]: any; }, expression: string | boolean): boolean => {
+export const parseExpression = (expression: string): (model: Model) => any => {
+    return SimpleExpressions.getParsedExpression(expression, compileExpression);
+};
+
+export const executeExpression = (model: Model, expression: string | boolean): boolean => {
     return SimpleExpressions.get(expression).evaluate(model);
 };
 
 export class SimpleExpression {
     /** @internal */
-    private readonly _parsedExpression: (model: { [key: string]: any; }) => any;
+    private readonly _parsedExpression: Evaluator;
 
-    /** @internal */
-    private readonly _needsFlattening: boolean = false;
-
-    /** @internal */
-    private flattenObject(ob: any) {
-        const toReturn: any = {};
-
-        for (const i in ob) {
-            if (!ob.hasOwnProperty(i)) continue;
-
-            if ((typeof ob[i]) === 'object' && ob[i] !== null) {
-                const flatObject = this.flattenObject(ob[i]);
-                for (const x in flatObject) {
-                    if (!flatObject.hasOwnProperty(x)) {
-                        continue;
-                    }
-
-                    toReturn[i + '.' + x] = flatObject[x];
-                }
-            } else {
-                toReturn[i] = ob[i];
-            }
-        }
-
-        return toReturn;
-    }
-
-    constructor(expression: string | boolean) {
+    public constructor(expression: string | boolean) {
         if (typeof expression === 'boolean') {
-            this._parsedExpression = () => expression;
-        } else {
-            if (!(typeof expression === 'string')) {
-                throw new Error("Invalid Expression: unsupported type" + (typeof expression));
-            }
-
-            if (!expression) {
-                throw new Error("Invalid Expression: empty");
-            }
-
-            expression = expression.replace(/(\r\n|\n|\r)/gm, '');
-            expression = expression.trim();
-
-            if (!expression) {
-                throw new Error("Invalid Expression: whitespace");
-            }
-
-            const flatteningRegex = /[,\(]\s*#\w+\.\w+\s*[,\)]/;
-            if (flatteningRegex.test(expression)) {
-                this._needsFlattening = true;
-            }
-
-            this._parsedExpression = parseExpression(expression);
+            this._parsedExpression = constantEvaluator(expression);
+            return;
         }
+
+        if (typeof expression !== 'string') {
+            throw new Error('Invalid Expression: unsupported type' + (typeof expression));
+        }
+
+        const normalizedExpression = expression.trim();
+        if (!normalizedExpression) {
+            throw new Error('Invalid Expression: whitespace');
+        }
+
+        this._parsedExpression = parseExpression(normalizedExpression);
     }
 
-    public evaluate(model: { [key: string]: any; }): boolean {
-        if (this._needsFlattening) {
-            model = this.flattenObject(model);
-        }
-
+    public evaluate(model: Model): boolean {
         return !!this._parsedExpression(model);
     }
 }

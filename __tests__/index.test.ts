@@ -158,3 +158,22 @@ test('Can test input lengths', () => {
     expect(se.executeExpression({}, 'eq(len("test"), 2)')).toBe(false);
     expect(se.executeExpression({}, 'eq(len("test"), 4)')).toBe(true);
 });
+
+test('Nested model references are resolved without flattening', () => {
+    expect(se.executeExpression({ form: { address: { city: 'Ghent' } } }, 'eq(#form.address.city, "Ghent")')).toBe(true);
+    expect(se.executeExpression({ 'form.address.city': 'literal' }, 'eq(#form.address.city, "literal")')).toBe(true);
+    expect(se.executeExpression({ form: {} }, 'empty(#form.address.city)')).toBe(true);
+});
+
+test('And and or short-circuit the right operand', () => {
+    expect(se.executeExpression({}, 'and(false, len(#missing))')).toBe(false);
+    expect(se.executeExpression({}, 'or(true, len(#missing))')).toBe(true);
+});
+
+test('Malformed expressions are rejected', () => {
+    expect(() => se.executeExpression({}, 'eq(1foo, 1)')).toThrow();
+    expect(() => se.executeExpression({}, 'eq(1, 2, 3)')).toThrow();
+    expect(() => se.executeExpression({}, 'not(true, false)')).toThrow();
+    expect(() => se.executeExpression({}, 'eq(1, 2) trailing')).toThrow();
+    expect(() => se.executeExpression({}, 'eq((1), 1)')).toThrow();
+});
