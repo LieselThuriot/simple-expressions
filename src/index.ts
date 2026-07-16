@@ -338,6 +338,24 @@ class ExpressionParser {
             return this.compileUnary(normalizedOperator, left);
         }
 
+        if (arity === 'variadic') {
+            if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
+                this.fail('operator ' + operator + ' expects at least two arguments');
+            }
+
+            const values: Evaluator[] = [left];
+            while ((this.tokenizer.kind as TokenKind) === TokenKind.Comma) {
+                this.tokenizer.next();
+                values.push(this.parseValue());
+            }
+
+            if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen) {
+                this.fail('operator ' + operator + ' expects at least two arguments');
+            }
+            this.tokenizer.next();
+            return this.compileVariadic(normalizedOperator, values);
+        }
+
         if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
             this.fail('operator ' + operator + ' expects two arguments');
         }
@@ -366,7 +384,7 @@ class ExpressionParser {
         return this.compileTernary(normalizedOperator, left, right, whenFalse);
     }
 
-    private operatorArity(operator: string): 1 | 2 | 3 {
+    private operatorArity(operator: string): 1 | 2 | 3 | 'variadic' {
         switch (operator) {
             case 'not':
             case 'empty':
@@ -375,16 +393,17 @@ class ExpressionParser {
             case 'upper':
                 return 1;
             case 'eq':
-            case 'or':
-            case 'and':
             case 'contains':
             case 'startswith':
             case 'endswith':
             case 'gt':
             case 'lt':
             case 'match':
-            case 'concat':
                 return 2;
+            case 'or':
+            case 'and':
+            case 'concat':
+                return 'variadic';
             case 'if':
                 return 3;
             default:
@@ -413,10 +432,6 @@ class ExpressionParser {
         switch (operator) {
             case 'eq':
                 return (model) => equals(left(model), right(model));
-            case 'or':
-                return (model) => !!left(model) || !!right(model);
-            case 'and':
-                return (model) => !!left(model) && !!right(model);
             case 'contains':
                 return (model) => contains(left(model), right(model));
             case 'startswith':
@@ -433,11 +448,42 @@ class ExpressionParser {
                     return (model) => evaluateCompiledRegex(left(model), regex);
                 }
                 return (model) => evaluateRegex(left(model), right(model));
+            default:
+                this.fail('invalid operator: ' + operator);
+        }
+    }
+
+    private compileVariadic(operator: string, values: Evaluator[]): Evaluator {
+        switch (operator) {
+            case 'or':
+                return (model) => {
+                    for (const value of values) {
+                        if (!!value(model)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+            case 'and':
+                return (model) => {
+                    for (const value of values) {
+                        if (!value(model)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
             case 'concat':
-                if (left.hasConstantValue && right.hasConstantValue) {
-                    return constantEvaluator(concat(left.constantValue, right.constantValue));
+                if (values.every((value) => value.hasConstantValue)) {
+                    return constantEvaluator(values.reduce((result, value) => concat(result, value.constantValue), ''));
                 }
-                return (model) => concat(left(model), right(model));
+                return (model) => {
+                    let result = '';
+                    for (const value of values) {
+                        result = concat(result, value(model));
+                    }
+                    return result;
+                };
             default:
                 this.fail('invalid operator: ' + operator);
         }

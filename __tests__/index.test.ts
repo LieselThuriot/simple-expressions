@@ -54,6 +54,13 @@ describe('basic expressions', () => {
         expect(se.executeExpression({}, 'AND (true, false )')).toBe(false);
     });
 
+    test('AND and OR accept more than two arguments', () => {
+        expect(se.executeExpression({}, 'AND(true, false, true, true, false)')).toBe(false);
+        expect(se.executeExpression({}, 'AND(true, true, true, true, true)')).toBe(true);
+        expect(se.executeExpression({}, 'OR(false, false, true, false, false)')).toBe(true);
+        expect(se.executeExpression({}, 'OR(false, false, false, false, false)')).toBe(false);
+    });
+
     test('AND (true, 0 ) for {} results in false', () => {
         expect(se.executeExpression({}, 'AND (true, 0 )')).toBe(false);
     });
@@ -158,6 +165,8 @@ describe('concatenation', () => {
         // These should probably throw since they're not boolean operators.
         // For now we are ok with them returning a boolean in the end result.
         expect(se.executeExpression({}, 'concat("test", "123")')).toBe(true);
+        expect(se.parseExpression('concat("a", "b", "c", "d")')({})).toBe('abcd');
+        expect(se.parseExpression('concat("a", 0, false, #missing, "b")')({})).toBe('ab');
         expect(se.executeExpression({}, 'concat(#1, #2)')).toBe(false);
         expect(se.executeExpression({ '1': '123' }, 'concat(#1, #2)')).toBe(true);
     });
@@ -200,6 +209,13 @@ describe('model references and logical evaluation', () => {
         expect(() => se.executeExpression(model, 'len(#value)')).toThrow('Input does not have a length');
         expect(se.executeExpression(model, 'and(false, len(#value))')).toBe(false);
         expect(se.executeExpression(model, 'or(true, len(#value))')).toBe(true);
+    });
+
+    test('And and or short-circuit later operands', () => {
+        const model = { value: {} };
+
+        expect(se.executeExpression(model, 'and(true, true, false, len(#value))')).toBe(false);
+        expect(se.executeExpression(model, 'or(false, false, true, len(#value))')).toBe(true);
     });
 
     test('Or evaluates a truthy or falsey right operand when needed', () => {
@@ -400,6 +416,9 @@ describe('parser validation', () => {
         'eq(1)',
         'eq(1,)',
         'eq(,1)',
+        'and(true)',
+        'or(false)',
+        'concat("value")',
         'eq(1 2)',
         'eq(1, 2',
         'eq(1, 2))',
