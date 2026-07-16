@@ -18,7 +18,7 @@
   "description": "Simple expression parsing and execution",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "npm run build && vitest run"
   },
   "types": "./lib\\index.d.ts",
   "directories": {

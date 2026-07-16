@@ -30,7 +30,9 @@ parentheses. They are not treated as string constants.
 
 You can reference model fields by using `#`.
 
-Nested properties work too but beware that the model will be flattened before executing.
+Nested properties are resolved directly from the model.
+If a model has both a nested property and an own dotted key with the same path, 
+the dotted key takes precedence.
 
 # Samples
 

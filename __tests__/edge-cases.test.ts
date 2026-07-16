@@ -1,7 +1,13 @@
-import { beforeEach, describe, expect, test } from 'vitest';
-import * as se from '../src/index';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import * as se from '..';
 
 beforeEach(() => {
+    se.SimpleExpressions.enableCaches();
+    se.SimpleExpressions.clear();
+});
+
+afterEach(() => {
+    se.SimpleExpressions.enableCaches();
     se.SimpleExpressions.clear();
 });
 
@@ -156,6 +162,8 @@ describe('parser validation', () => {
 
     test('rejects unsupported constructor input and unterminated strings', () => {
         expect(() => new se.SimpleExpression(123)).toThrow('unsupported type');
+        expect(() => se.executeExpression({}, 123 as unknown as string)).toThrow('unsupported type');
+        expect(() => se.SimpleExpressions.get(123 as unknown as string)).toThrow('unsupported type');
         expect(() => se.parseExpression('"unterminated')).toThrow('unterminated string');
     });
 });
@@ -188,13 +196,29 @@ describe('public APIs and caches', () => {
         expect(se.SimpleExpressions.get('true')).not.toBe(expression);
     });
 
-    test('disabling caches creates fresh parsed and expression instances', () => {
+    test('clear without options invalidates both caches', () => {
+        const parsed = se.parseExpression('true');
+        const expression = se.SimpleExpressions.get('true');
+
+        se.SimpleExpressions.clear();
+
+        expect(se.parseExpression('true')).not.toBe(parsed);
+        expect(se.SimpleExpressions.get('true')).not.toBe(expression);
+    });
+
+    test('caches can be disabled and re-enabled', () => {
         const parsed = se.parseExpression('true');
         const expression = se.SimpleExpressions.get('true');
 
         se.SimpleExpressions.disableCaches();
         expect(se.parseExpression('true')).not.toBe(parsed);
         expect(se.SimpleExpressions.get('true')).not.toBe(expression);
+
+        se.SimpleExpressions.clear();
+        se.SimpleExpressions.enableCaches();
+
+        expect(se.parseExpression('true')).toBe(se.parseExpression('true'));
+        expect(se.SimpleExpressions.get('true')).toBe(se.SimpleExpressions.get('true'));
     });
 
     test('cached evaluators continue to use the model passed at evaluation time', () => {
