@@ -36,6 +36,7 @@
     "build": "node scripts/clean.js && tsc",
     "test": "npm run build && vitest run",
     "pack:check": "npm pack --dry-run",
+    "release": "npm pack && npm publish",
     "prepublishOnly": "npm test"
   },
   "repository": {

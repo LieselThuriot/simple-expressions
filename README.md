@@ -68,9 +68,11 @@ Expressions and regular-expression patterns are trusted input. `match` accepts J
 ```bash
 npm test
 npm run pack:check
+npm run release
 ```
 
 `npm test` rebuilds the published output before running the test suite. `npm run pack:check` shows the files that would be included in a release.
+`npm run release` creates the package tarball and publishes it to npm.
 
 ## License
 
