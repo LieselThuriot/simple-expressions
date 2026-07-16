@@ -19,10 +19,12 @@
 - len (numeric result)
 
 ## Constants
-- true
-- false
-- any numbers
-- anything else that isn't recognized will be a string constant
+- `true` and `false` (case-insensitive)
+- numeric literals
+- quoted strings using single quotes, double quotes, or backticks
+
+Unquoted identifiers are interpreted as operator names and must be followed by
+parentheses. They are not treated as string constants.
 
 ## Model references
 

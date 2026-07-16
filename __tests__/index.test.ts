@@ -1,7 +1,11 @@
-import { expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
+import * as se from '../src/index';
 
-const se = require('../lib/index');
+beforeEach(() => {
+    se.SimpleExpressions.clear();
+});
 
+describe('basic expressions', () => {
 test('simple true results in true', () => {
     expect(se.executeExpression({}, true)).toBe(true);
 });
@@ -70,6 +74,9 @@ test('AND (true, empty( #text.innerText ) ) for {"text":{"innerText":"test"}} re
     expect(se.executeExpression({ "text": { "innerText": "test" } }, 'AND (true, empty( #text.innerText ) )')).toBe(false);
 });
 
+});
+
+describe('string parsing and boundaries', () => {
 test('Too many quotes throws', () => {
     expect(() => se.executeExpression({}, 'eq("te\\""st", "te\\""st")')).toThrow();
 });
@@ -106,6 +113,9 @@ test('Constant boundaries are respected', () => {
     expect(se.executeExpression({}, 'eq(123, "test\\"" )')).toBe(false);
 });
 
+});
+
+describe('regular expressions', () => {
 test('Can match a regex', () => {
     expect(se.executeExpression({ 'test': 'why hello there' }, 'match(#test, "hello")')).toBe(true);
     expect(se.executeExpression({ 'test': 'why hello there' }, 'match(#test, "^hello")')).toBe(false);
@@ -133,6 +143,9 @@ test('Can do complex things', () => {
     expect(se.executeExpression({ 'test': 'why hello there' }, 'and(not(empty(#test)), and(match(#test, "hello"), match(#test, "there")))')).toBe(true);
 });
 
+});
+
+describe('concatenation', () => {
 test('Concatination', () => {
     // These should probably throw since they're not boolean operators.
     // For now we are ok with them returning a boolean in the end result.
@@ -148,6 +161,9 @@ test('Concatination allows fancy regexes', () => {
     expect(se.executeExpression({ 'pattern1': 'hello', 'pattern2': 'there', 'test': 'hello over there' }, 'match(#test, concat(concat(concat(concat("(", #pattern1), ")(?! "), #pattern2), ")"))')).toBe(true);
 });
 
+});
+
+describe('length', () => {
 test('Can test input lengths', () => {
     expect(se.executeExpression({ 'test': 'hello' }, 'lt(len(#test), 10)')).toBe(true);
     expect(se.executeExpression({ 'test': 'hello' }, 'gt(len(#test), 10)')).toBe(false);
@@ -161,6 +177,9 @@ test('Can test input lengths', () => {
     expect(se.executeExpression({}, 'eq(len("test"), 4)')).toBe(true);
 });
 
+});
+
+describe('model references and logical evaluation', () => {
 test('Nested model references are resolved without flattening', () => {
     expect(se.executeExpression({ form: { address: { city: 'Ghent' } } }, 'eq(#form.address.city, "Ghent")')).toBe(true);
     expect(se.executeExpression({ 'form.address.city': 'literal' }, 'eq(#form.address.city, "literal")')).toBe(true);
@@ -172,10 +191,15 @@ test('And and or short-circuit the right operand', () => {
     expect(se.executeExpression({}, 'or(true, len(#missing))')).toBe(true);
 });
 
+});
+
+describe('malformed expressions', () => {
 test('Malformed expressions are rejected', () => {
     expect(() => se.executeExpression({}, 'eq(1foo, 1)')).toThrow();
     expect(() => se.executeExpression({}, 'eq(1, 2, 3)')).toThrow();
     expect(() => se.executeExpression({}, 'not(true, false)')).toThrow();
     expect(() => se.executeExpression({}, 'eq(1, 2) trailing')).toThrow();
     expect(() => se.executeExpression({}, 'eq((1), 1)')).toThrow();
+});
+
 });

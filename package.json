@@ -1,6 +1,6 @@
 {
   "name": "simple-expressions",
-  "version": "0.0.15",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "type": "commonjs",
   "devDependencies": {
@@ -13,13 +13,12 @@
     "script",
     "execution"
   ],
-  "author": "Steven Thuriot",
+  "author": "Liesel Thuriot",
   "license": "ISC",
   "description": "Simple expression parsing and execution",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
-    "all": "npm run build && npm run test"
+    "test": "vitest run"
   },
   "types": "./lib\\index.d.ts",
   "directories": {
@@ -27,10 +26,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/StevenThuriot/simple-expressions.git"
+    "url": "git+https://github.com/LieselThuriot/simple-expressions.git"
   },
   "bugs": {
-    "url": "https://github.com/StevenThuriot/simple-expressions/issues"
+    "url": "https://github.com/LieselThuriot/simple-expressions/issues"
   },
-  "homepage": "https://github.com/StevenThuriot/simple-expressions#readme"
+  "homepage": "https://github.com/LieselThuriot/simple-expressions#readme"
 }
