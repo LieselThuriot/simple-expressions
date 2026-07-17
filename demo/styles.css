@@ -32,6 +32,13 @@
     --blue-ver-text: #5269b9;
     --code-bg: #edf1ff;
     --code-text: #3155b7;
+    --editor-operator: #3155b7;
+    --editor-reference: #8a3f99;
+    --editor-string: #147d61;
+    --editor-number: #b42318;
+    --editor-constant: #b05b00;
+    --editor-punctuation: #667085;
+    --editor-invalid: #b42318;
 
     /* State */
     --green: #147d61;
@@ -76,6 +83,13 @@
         --blue-ver-text: #7b9ae8;
         --code-bg: #1e2a4a;
         --code-text: #79a0e8;
+        --editor-operator: #79a0e8;
+        --editor-reference: #d2a8ff;
+        --editor-string: #56d4a8;
+        --editor-number: #ff7b72;
+        --editor-constant: #ffa657;
+        --editor-punctuation: #8b949e;
+        --editor-invalid: #ff7b72;
 
         --green: #3fb950;
         --red: #f85149;
@@ -118,6 +132,13 @@ html[data-theme="dark"] {
     --blue-ver-text: #7b9ae8;
     --code-bg: #1e2a4a;
     --code-text: #79a0e8;
+    --editor-operator: #79a0e8;
+    --editor-reference: #d2a8ff;
+    --editor-string: #56d4a8;
+    --editor-number: #ff7b72;
+    --editor-constant: #ffa657;
+    --editor-punctuation: #8b949e;
+    --editor-invalid: #ff7b72;
 
     --green: #3fb950;
     --red: #f85149;
@@ -409,6 +430,88 @@ select {
     border-color: var(--blue);
     background: var(--surface);
     box-shadow: 0 0 0 4px var(--blue-glow);
+}
+
+.expression-editor {
+    display: block;
+    width: 100%;
+    min-height: 98px;
+    overflow: auto;
+    border: 1px solid var(--line-input);
+    border-radius: 11px;
+    color: var(--input-text);
+    background: var(--surface-dim);
+    font-family: var(--code-font);
+    font-size: 0.83rem;
+    line-height: 1.7;
+    resize: vertical;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.expression-editor:focus-within {
+    border-color: var(--blue);
+    background: var(--surface);
+    box-shadow: 0 0 0 4px var(--blue-glow);
+}
+
+.expression-editor .cm-editor {
+    min-height: 96px;
+    background: transparent;
+}
+
+.expression-editor .cm-content {
+    min-height: 66px;
+}
+
+.expression-editor .cm-tooltip-autocomplete {
+    z-index: 10;
+    max-width: min(430px, calc(100vw - 32px));
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 5px;
+    color: var(--ink);
+    background: var(--surface);
+    box-shadow: 0 12px 30px var(--shadow);
+    font-family: var(--font-family, "Segoe UI", Inter, system-ui, sans-serif);
+}
+
+.expression-editor .cm-tooltip-autocomplete > ul {
+    max-height: 240px;
+    padding: 0;
+    font-family: inherit;
+}
+
+.expression-editor .cm-tooltip-autocomplete > ul > li {
+    min-height: 30px;
+    border-radius: 6px;
+    padding: 5px 8px;
+    color: var(--ink);
+}
+
+.expression-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+    color: var(--ink);
+    background: var(--blue-glow);
+}
+
+.expression-editor .cm-completionLabel {
+    font-family: var(--code-font);
+    font-size: 0.8rem;
+}
+
+.expression-editor .cm-completionDetail {
+    margin-left: 10px;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.expression-editor .cm-completionInfo {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--muted);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 0.75rem;
 }
 
 .model-input {

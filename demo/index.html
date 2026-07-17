@@ -67,9 +67,9 @@ parseExpression('concat("Hi, ", #user.name)')(model);  // → "Hi, Ada"</pre>
                 <p id="model-help" class="field-help">The JSON object passed to the evaluator. Reference values with <code>#</code>, like <code>#user.name</code>.</p>
 
                 <label class="field-label" for="expression-input">
-                    <span>Expression</span>
+                    <span id="expression-label">Expression</span>
                 </label>
-                <textarea id="expression-input" class="code-input expression-input" spellcheck="false" aria-describedby="expression-help"></textarea>
+                <div id="expression-input" class="expression-editor expression-input" aria-labelledby="expression-label" aria-describedby="expression-help"></div>
                 <p id="expression-help" class="field-help">An expression evaluated against the model. Operators like <code>eq</code>, <code>and</code>, <code>concat</code>, and <code>if</code> are case-insensitive.</p>
 
                 <div class="actions">

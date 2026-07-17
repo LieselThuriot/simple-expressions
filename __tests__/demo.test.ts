@@ -6,6 +6,13 @@ import {
     initialModel,
     parseModel
 } from '../demo/playground';
+import {
+    getModelPropertyCompletions,
+    getModelPropertyNames,
+    getReferenceCompletionContext,
+    operatorDefinitions,
+    resolveModelPath
+} from '../demo/expression-completions';
 
 describe('demo playground helpers', () => {
     test('parses JSON object, array, and null models', () => {
@@ -48,5 +55,61 @@ describe('demo playground helpers', () => {
             ok: false,
             error: 'Model must be valid JSON.'
         });
+    });
+
+    test('offers filtered root and nested model property completions', () => {
+        const model = {
+            user: { name: 'Ada', role: 'engineer' },
+            score: 8,
+            items: [{ id: 1 }],
+            '__proto__': 'unsafe',
+            'bad.key': true,
+            'has space': true
+        };
+
+        expect(getModelPropertyNames(model)).toEqual(['items', 'score', 'user']);
+        expect(getModelPropertyNames(model, [], 'US')).toEqual(['user']);
+        expect(getModelPropertyNames(model, ['user'], 'r')).toEqual(['role']);
+        expect(getModelPropertyNames(model, ['items'])).toEqual(['0', 'length']);
+        expect(getModelPropertyNames(model, ['items', '0'])).toEqual(['id']);
+        expect(getModelPropertyCompletions('{"user":{"name":"Ada"}}', ['user'])).toEqual(['name']);
+        expect(getModelPropertyCompletions('{invalid}', [])).toEqual([]);
+        expect(getModelPropertyCompletions('null', [])).toEqual([]);
+        expect(getModelPropertyCompletions('{"constructor":{"secret":true}}', ['constructor'])).toEqual([]);
+    });
+
+    test('resolves dotted model paths with the evaluator precedence', () => {
+        const model = {
+            user: { name: 'nested' },
+            'user.name': 'direct'
+        };
+
+        expect(resolveModelPath(model, ['user', 'name'])).toBe('direct');
+        expect(resolveModelPath(model, ['user'])).toEqual({ name: 'nested' });
+        expect(resolveModelPath(model, ['missing'])).toBeUndefined();
+    });
+
+    test('finds reference completion ranges without suggesting inside strings', () => {
+        expect(getReferenceCompletionContext('#us')).toEqual({
+            from: 1,
+            to: 3,
+            path: [],
+            prefix: 'us'
+        });
+        expect(getReferenceCompletionContext('eq(#user.na')).toEqual({
+            from: 9,
+            to: 11,
+            path: ['user'],
+            prefix: 'na'
+        });
+        expect(getReferenceCompletionContext('eq("#user')).toBeNull();
+        expect(getReferenceCompletionContext('value#user')).toBeNull();
+    });
+
+    test('exposes every case-insensitive parser operator for completion', () => {
+        expect(operatorDefinitions).toHaveLength(16);
+        expect(new Set(operatorDefinitions.map((operator) => operator.name)).size).toBe(16);
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('startswith');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('if');
     });
 });

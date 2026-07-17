@@ -1,4 +1,5 @@
 import './styles.css';
+import { createExpressionEditor } from './expression-editor';
 import {
     evaluatePlayground,
     examples,
@@ -16,7 +17,7 @@ const getElement = <T extends HTMLElement>(id: string): T => {
 };
 
 const modelInput = getElement<HTMLTextAreaElement>('model-input');
-const expressionInput = getElement<HTMLTextAreaElement>('expression-input');
+const expressionHost = getElement<HTMLDivElement>('expression-input');
 const exampleSelect = getElement<HTMLSelectElement>('example-select');
 const evaluateButton = getElement<HTMLButtonElement>('evaluate-button');
 const resetButton = getElement<HTMLButtonElement>('reset-button');
@@ -48,7 +49,7 @@ const renderResult = (result: EvaluationResult): void => {
 };
 
 const evaluate = (): void => {
-    renderResult(evaluatePlayground(modelInput.value, expressionInput.value));
+    renderResult(evaluatePlayground(modelInput.value, expressionEditor.getValue()));
 };
 
 let evaluationTimer: number | undefined;
@@ -59,9 +60,16 @@ const scheduleEvaluation = (): void => {
     evaluationTimer = window.setTimeout(evaluate, 250);
 };
 
+const expressionEditor = createExpressionEditor(
+    expressionHost,
+    initialExpression,
+    () => modelInput.value,
+    scheduleEvaluation
+);
+
 const reset = (): void => {
     modelInput.value = initialModel;
-    expressionInput.value = initialExpression;
+    expressionEditor.setValue(initialExpression);
     exampleSelect.value = '';
     evaluate();
     modelInput.focus();
@@ -74,12 +82,11 @@ const loadExample = (): void => {
     }
 
     modelInput.value = example.model;
-    expressionInput.value = example.expression;
+    expressionEditor.setValue(example.expression);
     evaluate();
 };
 
 modelInput.addEventListener('input', scheduleEvaluation);
-expressionInput.addEventListener('input', scheduleEvaluation);
 evaluateButton.addEventListener('click', evaluate);
 resetButton.addEventListener('click', reset);
 exampleSelect.addEventListener('change', loadExample);
@@ -113,5 +120,4 @@ themeToggle.addEventListener('click', toggleTheme);
 applyTheme(getEffectiveTheme());
 
 modelInput.value = initialModel;
-expressionInput.value = initialExpression;
 evaluate();
