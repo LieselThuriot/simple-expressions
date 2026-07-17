@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Interactive playground for simple-expressions — a small, dependency-free expression evaluator for JavaScript and TypeScript.">
+    <title>simple-expressions playground</title>
+    <script>
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+        }());
+    </script>
+</head>
+<body>
+    <main class="page-shell">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">
+            <span id="theme-icon" aria-hidden="true">☾</span>
+        </button>
+        <header class="hero">
+            <div class="brand-row">
+                <img class="brand-logo" src="./simple-expressions.png" alt="simple-expressions logo">
+                <div class="brand-details">
+                    <div class="eyebrow"><span class="eyebrow-dot"></span> simple-expressions <span class="version">v0.1.1</span></div>
+                    <p class="brand-tagline">A small expression evaluator. No dependencies.</p>
+                </div>
+            </div>
+            <h1>Parse and evaluate simple expressions.</h1>
+            <p class="hero-copy">Pass a JSON model, write an expression, get back a typed result. Dependency-free, works in any JavaScript or TypeScript app.</p>
+            <pre class="hero-snippet">npm install simple-expressions
+
+const { executeExpression, parseExpression } = require('simple-expressions');
+
+const model = { user: { name: 'Ada' }, score: 8 };
+
+executeExpression(model, 'gt(#score, 5)');              // → true
+parseExpression('concat("Hi, ", #user.name)')(model);  // → "Hi, Ada"</pre>
+            <div class="hero-footer">
+                <a class="text-link" href="https://github.com/LieselThuriot/simple-expressions" target="_blank" rel="noreferrer">See it on GitHub <span aria-hidden="true">↗</span></a>
+            </div>
+        </header>
+
+        <section class="workspace" aria-label="Expression playground">
+            <div class="editor-column">
+                <div class="section-heading">
+                    <div>
+                        <p class="section-kicker">Playground</p>
+                        <h2>Model and expression</h2>
+                    </div>
+                    <label class="example-picker">
+                        <span>Load an example</span>
+                        <select id="example-select">
+                            <option value="">Choose one…</option>
+                            <option value="welcome">Check a condition</option>
+                            <option value="greeting">Make a greeting</option>
+                            <option value="status">Pick a status</option>
+                            <option value="search">Check some text</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="field-label" for="model-input">
+                    <span>Model</span>
+                    <span class="field-hint">JSON</span>
+                </label>
+                <textarea id="model-input" class="code-input model-input" spellcheck="false" aria-describedby="model-help"></textarea>
+                <p id="model-help" class="field-help">The JSON object passed to the evaluator. Reference values with <code>#</code>, like <code>#user.name</code>.</p>
+
+                <label class="field-label" for="expression-input">
+                    <span>Expression</span>
+                </label>
+                <textarea id="expression-input" class="code-input expression-input" spellcheck="false" aria-describedby="expression-help"></textarea>
+                <p id="expression-help" class="field-help">An expression evaluated against the model. Operators like <code>eq</code>, <code>and</code>, <code>concat</code>, and <code>if</code> are case-insensitive.</p>
+
+                <div class="actions">
+                    <button id="evaluate-button" class="button button-primary" type="button"><span aria-hidden="true">▶</span> Evaluate</button>
+                    <button id="reset-button" class="button button-quiet" type="button">Reset</button>
+                </div>
+            </div>
+
+            <aside id="result-panel" class="result-panel" aria-labelledby="result-heading">
+                <div class="result-topline">
+                    <div>
+                        <p class="section-kicker">Output</p>
+                        <h2 id="result-heading">Result</h2>
+                    </div>
+                    <span id="output-type" class="result-type">result</span>
+                </div>
+                <pre id="output" class="output" aria-live="polite" aria-atomic="true"></pre>
+                <p id="status" class="status" data-state="idle" role="status">Ready to evaluate</p>
+                <pre class="usage-snippet">// typed result (preserves value type)
+const evaluate = parseExpression(expression);
+const result   = evaluate(model);
+
+// boolean coercion
+const match = executeExpression(model, expression);</pre>
+            </aside>
+        </section>
+
+        <section class="reference" aria-labelledby="reference-heading">
+            <div>
+                <p class="section-kicker">Reference</p>
+                <h2 id="reference-heading">Operators</h2>
+            </div>
+            <div class="operator-table-wrap">
+                <table class="operator-table">
+                    <thead>
+                        <tr>
+                            <th>Signature</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>not(value)</code></td><td>Logical negation</td></tr>
+                        <tr><td><code>eq(left, right)</code></td><td>Loose equality (<code>==</code>)</td></tr>
+                        <tr><td><code>or(a, b, …)</code></td><td>Logical OR, short-circuits</td></tr>
+                        <tr><td><code>and(a, b, …)</code></td><td>Logical AND, short-circuits</td></tr>
+                        <tr><td><code>contains(text, part)</code></td><td>True if <code>text</code> contains <code>part</code></td></tr>
+                        <tr><td><code>startswith(text, prefix)</code></td><td>True if <code>text</code> starts with <code>prefix</code></td></tr>
+                        <tr><td><code>endswith(text, suffix)</code></td><td>True if <code>text</code> ends with <code>suffix</code></td></tr>
+                        <tr><td><code>gt(left, right)</code></td><td>Greater-than comparison</td></tr>
+                        <tr><td><code>lt(left, right)</code></td><td>Less-than comparison</td></tr>
+                        <tr><td><code>empty(value)</code></td><td>True for <code>null</code>, <code>undefined</code>, and empty strings</td></tr>
+                        <tr><td><code>len(value)</code></td><td>String length or own <code>length</code> property</td></tr>
+                        <tr><td><code>lower(value)</code></td><td>Converts to lowercase; falsy values become <code>""</code></td></tr>
+                        <tr><td><code>upper(value)</code></td><td>Converts to uppercase; falsy values become <code>""</code></td></tr>
+                        <tr><td><code>concat(a, b, …)</code></td><td>Concatenates values; falsy values become <code>""</code></td></tr>
+                        <tr><td><code>match(value, pattern)</code></td><td>Tests against a JavaScript regex pattern</td></tr>
+                        <tr><td><code>if(test, yes, no)</code></td><td>Returns <code>yes</code> or <code>no</code> based on <code>test</code>; evaluates one branch only</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <span>A small library with no runtime dependencies.</span>
+            <a class="text-link" href="https://www.npmjs.com/package/simple-expressions" target="_blank" rel="noreferrer">Read the full README <span aria-hidden="true">↗</span></a>
+        </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+</body>
+</html>

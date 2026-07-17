@@ -23,6 +23,7 @@
   "devDependencies": {
     "terser": "^5.49.0",
     "typescript": "^7.0.2",
+    "vite": "^8.1.5",
     "vitest": "^4.1.10"
   },
   "keywords": [
@@ -36,6 +37,9 @@
   "scripts": {
     "build": "node scripts/clean.js && tsc && terser lib/index.js --compress --mangle --output lib/index.js",
     "test": "npm run build && vitest run",
+    "demo": "vite --config demo/vite.config.js",
+    "demo:build": "vite build --config demo/vite.config.js",
+    "demo:preview": "vite preview --config demo/vite.config.js",
     "pack:check": "npm pack --dry-run",
     "release": "npm pack && npm publish",
     "prepublishOnly": "npm test"

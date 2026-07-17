@@ -1,5 +1,9 @@
 # simple-expressions
 
+<p align="center">
+  <img src="https://lieselthuriot.github.io/simple-expressions/simple-expressions.png" alt="simple-expressions logo" width="96">
+</p>
+
 A small, dependency-free CommonJS library for parsing and evaluating simple expressions against a model object.
 
 ## Install
@@ -26,6 +30,21 @@ evaluator(model);
 ```
 
 `executeExpression(model, expression)` always returns a boolean. `parseExpression(expression)` returns a reusable evaluator and preserves the expression result's type.
+
+## Demo
+
+Try the interactive playground at [lieselthuriot.github.io/simple-expressions](https://lieselthuriot.github.io/simple-expressions/).
+
+The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the package source bundled locally for the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, and `if`.
+
+To run the demo locally:
+
+```bash
+npm install
+npm run demo
+```
+
+The demo is a client-side showcase, not a security boundary. As with the library itself, expression text and regular-expression patterns should be treated as trusted input.
 
 ## Expression Syntax
 
