@@ -1,9 +1,13 @@
-import { parseExpression } from '../src/index';
+import { parseExpression } from 'simple-expressions';
 
-export const initialModel = JSON.stringify({
-    user: { name: 'Ada', role: 'engineer' },
-    score: 8
-}, null, 2);
+export const initialModel = JSON.stringify(
+    {
+        user: { name: 'Ada', role: 'engineer' },
+        score: 8
+    },
+    null,
+    2
+);
 
 export const initialExpression = 'and(eq(#user.name, "Ada"), gt(#score, 5))';
 
@@ -96,7 +100,7 @@ export const formatValue = (value: unknown): FormattedValue => {
 export const evaluatePlayground = (modelText: string, expressionText: string): EvaluationResult => {
     try {
         const model = parseModel(modelText);
-        const value = parseExpression(expressionText)(model);
+        const value = parseExpression(expressionText)(model ?? {});
         return { ok: true, value: formatValue(value) };
     } catch (error: unknown) {
         return {

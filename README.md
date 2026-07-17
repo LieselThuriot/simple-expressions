@@ -1,6 +1,6 @@
 # simple-expressions
 
-![simple-expressions logo](https://raw.githubusercontent.com/LieselThuriot/simple-expressions/refs/heads/master/demo/simple-expressions.png)
+![simple-expressions logo](https://raw.githubusercontent.com/LieselThuriot/simple-expressions/refs/heads/master/demo/public/simple-expressions.png)
 
 [![npm](https://img.shields.io/npm/v/simple-expressions.svg)](https://www.npmjs.com/package/simple-expressions)
 [![license](https://img.shields.io/npm/l/simple-expressions.svg)](https://www.npmjs.com/package/simple-expressions)

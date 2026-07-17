@@ -1,29 +1,8 @@
+import { operatorDefinitions } from './constants';
 import { parseModel } from './playground';
 
-export interface OperatorDefinition {
-    name: string;
-    detail: string;
-    description: string;
-}
-
-export const operatorDefinitions: readonly OperatorDefinition[] = [
-    { name: 'not', detail: '1 argument', description: 'Logical negation' },
-    { name: 'eq', detail: '2 arguments', description: 'Loose equality' },
-    { name: 'or', detail: '2+ arguments', description: 'Logical OR, short-circuits' },
-    { name: 'and', detail: '2+ arguments', description: 'Logical AND, short-circuits' },
-    { name: 'contains', detail: '2 arguments', description: 'Checks whether text contains a part' },
-    { name: 'startswith', detail: '2 arguments', description: 'Checks whether text starts with a prefix' },
-    { name: 'endswith', detail: '2 arguments', description: 'Checks whether text ends with a suffix' },
-    { name: 'gt', detail: '2 arguments', description: 'Greater-than comparison' },
-    { name: 'lt', detail: '2 arguments', description: 'Less-than comparison' },
-    { name: 'empty', detail: '1 argument', description: 'Checks for null, undefined, or an empty string' },
-    { name: 'len', detail: '1 argument', description: 'Returns a string or own length property' },
-    { name: 'lower', detail: '1 argument', description: 'Converts a value to lowercase' },
-    { name: 'upper', detail: '1 argument', description: 'Converts a value to uppercase' },
-    { name: 'concat', detail: '2+ arguments', description: 'Concatenates values' },
-    { name: 'match', detail: '2 arguments', description: 'Tests a value against a regular expression' },
-    { name: 'if', detail: '3 arguments', description: 'Returns one of two values based on a condition' }
-];
+export { operatorDefinitions };
+export type { OperatorDefinition } from './constants';
 
 export interface ReferenceCompletionContext {
     from: number;

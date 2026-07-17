@@ -398,6 +398,9 @@ select {
 }
 
 .field-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 8px;
     color: var(--ink);
     font-size: 0.84rem;
@@ -413,8 +416,6 @@ select {
 .code-input {
     display: block;
     width: 100%;
-    resize: vertical;
-    padding: 15px 16px;
     border: 1px solid var(--line-input);
     border-radius: 11px;
     outline: none;
@@ -426,10 +427,20 @@ select {
     transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 
-.code-input:focus {
+.code-input:focus-within {
     border-color: var(--blue);
     background: var(--surface);
     box-shadow: 0 0 0 4px var(--blue-glow);
+}
+
+.code-input .cm-editor {
+    min-height: 156px;
+    background: transparent;
+}
+
+.code-input .cm-content {
+    min-height: 126px;
+    padding: 15px 16px;
 }
 
 .expression-editor {
@@ -463,7 +474,7 @@ select {
     min-height: 66px;
 }
 
-.expression-editor .cm-tooltip-autocomplete {
+.expression-editor .cm-tooltip.cm-tooltip-autocomplete {
     z-index: 10;
     max-width: min(430px, calc(100vw - 32px));
     border: 1px solid var(--line);
@@ -475,36 +486,36 @@ select {
     font-family: var(--font-family, "Segoe UI", Inter, system-ui, sans-serif);
 }
 
-.expression-editor .cm-tooltip-autocomplete > ul {
+.expression-editor .cm-tooltip.cm-tooltip-autocomplete > ul {
     max-height: 240px;
     padding: 0;
     font-family: inherit;
 }
 
-.expression-editor .cm-tooltip-autocomplete > ul > li {
+.expression-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li {
     min-height: 30px;
     border-radius: 6px;
     padding: 5px 8px;
     color: var(--ink);
 }
 
-.expression-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+.expression-editor .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
     color: var(--ink);
     background: var(--blue-glow);
 }
 
-.expression-editor .cm-completionLabel {
+.cm-completionLabel {
     font-family: var(--code-font);
     font-size: 0.8rem;
 }
 
-.expression-editor .cm-completionDetail {
+.cm-completionDetail {
     margin-left: 10px;
     color: var(--muted);
     font-size: 0.72rem;
 }
 
-.expression-editor .cm-completionInfo {
+.expression-editor .cm-tooltip.cm-completionInfo {
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 8px 10px;
@@ -566,16 +577,6 @@ select:focus-visible,
 .theme-toggle:focus-visible {
     outline: 3px solid var(--blue-ring);
     outline-offset: 3px;
-}
-
-.button-primary {
-    color: white;
-    background: var(--blue);
-    box-shadow: 0 7px 15px rgb(53 99 233 / 22%);
-}
-
-.button-primary:hover {
-    background: var(--blue-dark);
 }
 
 .button-quiet {

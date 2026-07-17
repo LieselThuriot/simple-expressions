@@ -5,14 +5,14 @@ import {
     initialExpression,
     initialModel,
     parseModel
-} from '../demo/playground';
+} from '../demo/src/playground';
 import {
     getModelPropertyCompletions,
     getModelPropertyNames,
     getReferenceCompletionContext,
     operatorDefinitions,
     resolveModelPath
-} from '../demo/expression-completions';
+} from '../demo/src/expression-completions';
 
 describe('demo playground helpers', () => {
     test('parses JSON object, array, and null models', () => {

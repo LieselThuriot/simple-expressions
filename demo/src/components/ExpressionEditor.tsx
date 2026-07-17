@@ -1,15 +1,14 @@
 import { autocompletion, type Completion, type CompletionContext, type CompletionSource } from '@codemirror/autocomplete';
 import { HighlightStyle, StreamLanguage, StringStream, syntaxHighlighting } from '@codemirror/language';
-import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { basicSetup } from 'codemirror';
 import { tags } from '@lezer/highlight';
+import CodeMirror from '@uiw/react-codemirror';
 import {
     getModelPropertyCompletions,
     getReferenceCompletionContext,
     isInsideStringAt,
     operatorDefinitions
-} from './expression-completions';
+} from '../expression-completions';
 
 interface ExpressionParserState {
     quote: string | null;
@@ -198,6 +197,7 @@ const createExpressionCompletionSource = (getModelText: () => string): Completio
         }
 
         const word = context.matchBefore(/[A-Za-z]*$/);
+
         if (!context.explicit && (!word || word.from === word.to)) {
             return null;
         }
@@ -211,25 +211,18 @@ const createExpressionCompletionSource = (getModelText: () => string): Completio
     };
 };
 
-export interface ExpressionEditor {
-    getValue(): string;
-    setValue(value: string): void;
-    focus(): void;
-    destroy(): void;
+export interface ExpressionEditorProps {
+    value: string;
+    onChange: (value: string) => void;
+    getModelText: () => string;
 }
 
-export const createExpressionEditor = (
-    parent: HTMLElement,
-    initialValue: string,
-    getModelText: () => string,
-    onChange: () => void
-): ExpressionEditor => {
-    const view = new EditorView({
-        parent,
-        state: EditorState.create({
-            doc: initialValue,
-            extensions: [
-                basicSetup,
+export const ExpressionEditor = ({ value, onChange, getModelText }: ExpressionEditorProps) => {
+    return (
+        <CodeMirror
+            value={value}
+            onChange={onChange}
+            extensions={[
                 expressionLanguage,
                 syntaxHighlighting(expressionHighlightStyle),
                 expressionEditorTheme,
@@ -242,30 +235,26 @@ export const createExpressionEditor = (
                     'aria-labelledby': 'expression-label',
                     'aria-describedby': 'expression-help',
                     spellcheck: 'false'
-                }),
-                EditorView.updateListener.of((update) => {
-                    if (update.docChanged) {
-                        onChange();
-                    }
                 })
-            ]
-        })
-    });
-
-    return {
-        getValue: () => view.state.doc.toString(),
-        setValue: (value: string) => {
-            if (view.state.doc.toString() !== value) {
-                view.dispatch({
-                    changes: {
-                        from: 0,
-                        to: view.state.doc.length,
-                        insert: value
-                    }
-                });
-            }
-        },
-        focus: () => view.focus(),
-        destroy: () => view.destroy()
-    };
+            ]}
+            basicSetup={{
+                lineNumbers: false,
+                highlightActiveLineGutter: false,
+                highlightActiveLine: false,
+                foldGutter: false,
+                dropCursor: false,
+                allowMultipleSelections: false,
+                indentOnInput: false,
+                bracketMatching: true,
+                closeBrackets: false,
+                autocompletion: false,
+                searchKeymap: false,
+                historyKeymap: false,
+                foldKeymap: false,
+                completionKeymap: false,
+                lintKeymap: false
+            }}
+            className="expression-editor expression-input"
+        />
+    );
 };

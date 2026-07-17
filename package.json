@@ -43,9 +43,9 @@
   "scripts": {
     "build": "node scripts/clean.js && tsc && terser lib/index.js --compress --mangle --output lib/index.js",
     "test": "npm run build && vitest run",
-    "demo": "vite --config demo/vite.config.js",
-    "demo:build": "vite build --config demo/vite.config.js",
-    "demo:preview": "vite preview --config demo/vite.config.js",
+    "demo": "cd demo && npm install && npm run dev",
+    "demo:build": "cd demo && npm install && npm run build",
+    "demo:preview": "cd demo && npm install && npm run preview",
     "pack:check": "npm pack --dry-run",
     "release": "npm pack && npm publish",
     "prepublishOnly": "npm test"
