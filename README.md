@@ -1,8 +1,9 @@
 # simple-expressions
 
-<p align="center">
-  <img src="https://lieselthuriot.github.io/simple-expressions/simple-expressions.png" alt="simple-expressions logo" width="96">
-</p>
+![simple-expressions logo](https://raw.githubusercontent.com/LieselThuriot/simple-expressions/refs/heads/master/demo/simple-expressions.png)
+
+[![npm](https://img.shields.io/npm/v/simple-expressions.svg)](https://www.npmjs.com/package/simple-expressions)
+[![license](https://img.shields.io/npm/l/simple-expressions.svg)](https://www.npmjs.com/package/simple-expressions)
 
 A small, dependency-free CommonJS library for parsing and evaluating simple expressions against a model object.
 
@@ -97,7 +98,3 @@ npm run release
 
 `npm test` rebuilds the published output before running the test suite. `npm run pack:check` shows the files that would be included in a release.
 `npm run release` creates the package tarball and publishes it to npm.
-
-## License
-
-[ISC](LICENSE)
