@@ -1,8 +1,13 @@
-import type { ChangeEventHandler } from 'react';
-import { ExpressionEditor } from './ExpressionEditor';
+import { lazy, Suspense, type ChangeEventHandler } from 'react';
 import { ExamplePicker } from './ExamplePicker';
-import { ModelEditor } from './ModelEditor';
 import { PlaygroundActions } from './PlaygroundActions';
+
+const ExpressionEditor = lazy(() => import('./ExpressionEditor').then(({ ExpressionEditor }) => ({ default: ExpressionEditor })));
+const ModelEditor = lazy(() => import('./ModelEditor').then(({ ModelEditor }) => ({ default: ModelEditor })));
+
+const EditorLoading = ({ className }: { className: string }) => (
+    <div className={`${className} editor-loading`} role="status" aria-label="Loading editor" />
+);
 
 interface PlaygroundEditorProps {
     expressionText: string;
@@ -39,7 +44,9 @@ export const PlaygroundEditor = ({
                 <span id="model-label">Model</span>
                 <span className="field-hint">JSON</span>
             </div>
-            <ModelEditor value={modelText} onChange={onModelChange} />
+            <Suspense fallback={<EditorLoading className="code-input model-input" />}>
+                <ModelEditor value={modelText} onChange={onModelChange} />
+            </Suspense>
             <p id="model-help" className="field-help">
                 The JSON object passed to the evaluator. Reference values with <code>#</code>, like <code>#user.name</code>.
             </p>
@@ -47,7 +54,9 @@ export const PlaygroundEditor = ({
             <div className="field-label">
                 <span id="expression-label">Expression</span>
             </div>
-            <ExpressionEditor value={expressionText} onChange={onExpressionChange} getModelText={getModelText} />
+            <Suspense fallback={<EditorLoading className="expression-editor expression-input" />}>
+                <ExpressionEditor value={expressionText} onChange={onExpressionChange} getModelText={getModelText} />
+            </Suspense>
             <p id="expression-help" className="field-help">
                 An expression evaluated against the model. Operators like <code>eq</code>, <code>and</code>,{' '}
                 <code>concat</code>, and <code>if</code> are case-insensitive.
