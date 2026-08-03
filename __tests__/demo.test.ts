@@ -57,6 +57,16 @@ describe('demo playground helpers', () => {
         });
     });
 
+    test('every playground example has a unique id and evaluates successfully', () => {
+        expect(new Set(examples.map((example) => example.id)).size).toBe(examples.length);
+
+        for (const example of examples) {
+            const result = evaluatePlayground(example.model, example.expression);
+
+            expect(result.ok, `${example.id} should evaluate successfully`).toBe(true);
+        }
+    });
+
     test('returns useful errors for invalid expressions and models', () => {
         expect(evaluatePlayground('{"value": 1}', 'unknown(#value)')).toEqual({
             ok: false,

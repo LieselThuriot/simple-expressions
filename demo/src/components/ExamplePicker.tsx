@@ -11,7 +11,6 @@ export const ExamplePicker = ({ selectedExampleId, onChange }: ExamplePickerProp
         <label className="example-picker">
             <span>Load an example</span>
             <select value={selectedExampleId} onChange={onChange}>
-                <option value="">Choose one…</option>
                 {examples.map((example) => (
                     <option key={example.id} value={example.id}>
                         {example.label}

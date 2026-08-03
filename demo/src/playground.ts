@@ -1,12 +1,12 @@
 import { parseExpression } from 'simple-expressions';
 
-export const initialModel = JSON.stringify(
+const formatModel = (model: Record<string, unknown>): string => JSON.stringify(model, null, 2);
+
+export const initialModel = formatModel(
     {
         user: { name: 'Ada', role: 'engineer' },
         score: 8
-    },
-    null,
-    2
+    }
 );
 
 export const initialExpression = 'and(eq(#user.name, "Ada"), gt(#score, 5))';
@@ -27,33 +27,61 @@ export const examples: DemoExample[] = [
     },
     {
         id: 'greeting',
-        label: 'Make a greeting',
-        model: JSON.stringify({ user: { name: 'Ada' } }, null, 2),
+        label: 'Build a greeting',
+        model: formatModel({ user: { name: 'Ada' } }),
         expression: 'concat("Hello, ", #user.name, "!")'
     },
     {
         id: 'status',
-        label: 'Pick a status',
-        model: JSON.stringify({ score: 8 }, null, 2),
-        expression: 'if(gt(#score, 5), "ready", "keep practicing")'
+        label: 'Choose a score status',
+        model: formatModel({ score: 8 }),
+        expression: 'if(and(gt(#score, 5), lt(#score, 10)), "ready", "keep practicing")'
     },
     {
         id: 'search',
-        label: 'Check some text',
-        model: JSON.stringify({ message: 'Simple expressions are useful' }, null, 2),
+        label: 'Search normalized text',
+        model: formatModel({ message: 'Simple expressions are useful' }),
         expression: 'and(not(empty(#message)), match(lower(#message), "useful$"))'
     },
     {
         id: 'membership',
-        label: 'Check list membership',
-        model: JSON.stringify({ role: 'editor', allowedRoles: ['admin', 'editor'] }, null, 2),
-        expression: 'in(#role, #allowedRoles)'
+        label: 'Check access with OR',
+        model: formatModel({ role: 'editor', allowedRoles: ['editor', 'reviewer'] }),
+        expression: 'or(eq(#role, "admin"), in(#role, #allowedRoles))'
     },
     {
         id: 'normalize-name',
-        label: 'Normalize an optional name',
-        model: JSON.stringify({ displayName: '  Ada Lovelace  ' }, null, 2),
+        label: 'Trim an optional name',
+        model: formatModel({ displayName: '  Ada Lovelace  ' }),
         expression: 'if(defined(#displayName), trim(#displayName), "Anonymous")'
+    },
+    {
+        id: 'text-boundaries',
+        label: 'Check text boundaries',
+        model: formatModel({ slug: 'simple-expressions' }),
+        expression: `and(
+    startswith(#slug, "simple"),
+    contains(#slug, "-"),
+    endswith(#slug, "expressions")
+)`
+    },
+    {
+        id: 'literal-list',
+        label: 'Check a literal list',
+        model: formatModel({ status: 'READY' }),
+        expression: 'in(lower(#status), ["ready", "approved"])'
+    },
+    {
+        id: 'tag-count',
+        label: 'Count model values',
+        model: formatModel({ tags: ['expressions', 'demo', 'typed'] }),
+        expression: 'len(#tags)'
+    },
+    {
+        id: 'display-label',
+        label: 'Format a display label',
+        model: formatModel({ user: { name: 'Ada' }, role: 'engineer' }),
+        expression: 'concat(upper(#user.name), " / ", upper(#role))'
     }
 ];
 

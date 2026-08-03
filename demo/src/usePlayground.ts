@@ -32,7 +32,7 @@ const useDebouncedEvaluation = (evaluate: (model: string, expression: string) =>
 export const usePlayground = () => {
     const [modelText, setModelText] = useState(initialModel);
     const [expressionText, setExpressionText] = useState(initialExpression);
-    const [selectedExampleId, setSelectedExampleId] = useState('');
+    const [selectedExampleId, setSelectedExampleId] = useState('welcome');
     const [result, setResult] = useState<EvaluationResult>(() => evaluatePlayground(initialModel, initialExpression));
     const lastEvaluated = useRef({ model: initialModel, expression: initialExpression });
 
@@ -63,7 +63,7 @@ export const usePlayground = () => {
     const handleReset = useCallback(() => {
         setModelText(initialModel);
         setExpressionText(initialExpression);
-        setSelectedExampleId('');
+        setSelectedExampleId('welcome');
         evaluateImmediately(initialModel, initialExpression);
     }, [evaluateImmediately]);
 
