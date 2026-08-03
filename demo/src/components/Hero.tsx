@@ -11,7 +11,7 @@ export const Hero = () => {
                 />
                 <div className="brand-details">
                     <div className="eyebrow">
-                        <span className="eyebrow-dot"></span> simple-expressions <span className="version">v0.1.1</span>
+                        <span className="eyebrow-dot"></span> simple-expressions <span className="version">v1.0.0</span>
                     </div>
                     <p className="brand-tagline">A small expression evaluator. No dependencies.</p>
                 </div>

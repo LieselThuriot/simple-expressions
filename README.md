@@ -54,6 +54,7 @@ Constants:
 - `true` and `false`, case-insensitive
 - Numeric literals, including signed, decimal, and exponent values
 - Strings quoted with single quotes, double quotes, or backticks
+- Lists enclosed in square brackets, with comma-separated expressions such as `["yes", lower("NO"), #value]`
 
 Model references start with `#`. Nested values use dots, such as `#user.name`. A literal own key such as `"user.name"` takes precedence over nested traversal. References only resolve own properties; inherited values are never read. The segments `__proto__`, `constructor`, and `prototype` are rejected.
 
@@ -68,12 +69,15 @@ Operators are case-insensitive:
 | `contains` | 2 | Case-sensitive string containment; the left value must be a string. |
 | `startswith` | 2 | Case-sensitive string prefix matching; the left value must be a string. |
 | `endswith` | 2 | Case-sensitive string suffix matching; the left value must be a string. |
+| `in` | 2 | True when the first value is present in the second value, which must be a list; comparisons use the same loose equality as `eq`. |
 | `gt` | 2 | JavaScript greater-than comparison. |
 | `lt` | 2 | JavaScript less-than comparison. |
 | `empty` | 1 | True for `null`, `undefined`, and empty strings. |
 | `len` | 1 | A string length or an own `length` property; throws otherwise. |
 | `lower` | 1 | Converts a value to lowercase text; falsey values become empty strings. |
 | `upper` | 1 | Converts a value to uppercase text; falsey values become empty strings. |
+| `trim` | 1 | Trims surrounding whitespace; nullish values remain unchanged and other falsey values become empty strings. |
+| `defined` | 1 | True for every value except `null` and `undefined`. |
 | `concat` | 2+ | Concatenates truthy values after calling `toString()`; falsy values become empty strings. |
 | `match` | 2 | Tests a value against a JavaScript regular expression pattern. |
 | `if` | 3 | Returns the second or third argument based on the truthiness of the first; only the selected branch is evaluated. |

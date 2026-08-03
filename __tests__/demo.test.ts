@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
     evaluatePlayground,
+    examples,
     formatValue,
     initialExpression,
     initialModel,
@@ -43,6 +44,16 @@ describe('demo playground helpers', () => {
         expect(evaluatePlayground('{"user":{"name":"Ada"}}', 'concat("Hello, ", #user.name)')).toEqual({
             ok: true,
             value: { display: '"Hello, Ada"', type: 'string' }
+        });
+    });
+
+    test('includes a defined and trim example', () => {
+        const example = examples.find((candidate) => candidate.id === 'normalize-name');
+
+        expect(example).toBeDefined();
+        expect(evaluatePlayground(example!.model, example!.expression)).toEqual({
+            ok: true,
+            value: { display: '"Ada Lovelace"', type: 'string' }
         });
     });
 
@@ -96,6 +107,12 @@ describe('demo playground helpers', () => {
             path: [],
             prefix: 'us'
         });
+        expect(getReferenceCompletionContext('[#us')).toEqual({
+            from: 2,
+            to: 4,
+            path: [],
+            prefix: 'us'
+        });
         expect(getReferenceCompletionContext('eq(#user.na')).toEqual({
             from: 9,
             to: 11,
@@ -107,9 +124,12 @@ describe('demo playground helpers', () => {
     });
 
     test('exposes every case-insensitive parser operator for completion', () => {
-        expect(operatorDefinitions).toHaveLength(16);
-        expect(new Set(operatorDefinitions.map((operator) => operator.name)).size).toBe(16);
+        expect(operatorDefinitions).toHaveLength(19);
+        expect(new Set(operatorDefinitions.map((operator) => operator.name)).size).toBe(19);
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('startswith');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('in');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('if');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('trim');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('defined');
     });
 });

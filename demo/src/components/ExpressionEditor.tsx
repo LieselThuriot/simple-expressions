@@ -20,7 +20,7 @@ const operatorNames = new Set(operatorDefinitions.map((operator) => operator.nam
 const isIdentifierPart = (character: string): boolean => /[A-Za-z]/.test(character);
 
 const isReferenceDelimiter = (character: string): boolean => {
-    return character === '(' || character === ')' || character === ',' || character.charCodeAt(0) <= 32;
+    return character === '(' || character === ')' || character === ',' || character === '[' || character === ']' || character.charCodeAt(0) <= 32;
 };
 
 const consumeString = (stream: StringStream, state: ExpressionParserState): void => {
@@ -89,7 +89,7 @@ const expressionLanguage = StreamLanguage.define<ExpressionParserState>({
             return 'invalid';
         }
 
-        if (character === '(' || character === ')' || character === ',') {
+        if (character === '(' || character === ')' || character === ',' || character === '[' || character === ']') {
             stream.next();
             return 'punctuation';
         }

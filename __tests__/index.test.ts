@@ -243,6 +243,22 @@ describe('operators', () => {
         expect(se.executeExpression({ value: 12345 }, 'contains(#value, "23")')).toBe(false);
     });
 
+    test('in checks list membership using loose equality', () => {
+        expect(se.executeExpression({}, 'in("test", ["yes", \'no\'])')).toBe(false);
+        expect(se.executeExpression({}, 'in("yes", [ "yes" , "no" ] )')).toBe(true);
+        expect(se.executeExpression({}, 'in(1, ["1", 2])')).toBe(true);
+        expect(se.executeExpression({}, 'in(false, [0, true])')).toBe(true);
+        expect(se.executeExpression({}, 'in("yes", [])')).toBe(false);
+        expect(se.executeExpression({}, 'in("yes", "yes")')).toBe(false);
+        expect(se.executeExpression({ value: 'yes', allowed: ['yes', 'no'] }, 'IN(#value, #allowed)')).toBe(true);
+    });
+
+    test('lists evaluate simple expressions and model references', () => {
+        expect(se.parseExpression('[1, lower("YES"), [true, 2]]')({})).toEqual([1, 'yes', [true, 2]]);
+        expect(se.executeExpression({ value: 'yes' }, 'in(#value, [lower("YES"), #other])')).toBe(true);
+        expect(se.executeExpression({ value: 'no', other: 'yes' }, 'in(#value, [lower("YES"), #other])')).toBe(false);
+    });
+
     test('startswith and endswith are case-sensitive and only accept string input', () => {
         expect(se.executeExpression({ value: 'Hello world' }, 'startswith(#value, "Hello")')).toBe(true);
         expect(se.executeExpression({ value: 'Hello world' }, 'startswith(#value, "hello")')).toBe(false);
@@ -260,6 +276,30 @@ describe('operators', () => {
         expect(se.parseExpression('lower(0)')({})).toBe('');
         expect(se.parseExpression('upper(false)')({})).toBe('');
         expect(se.parseExpression('lower(#missing)')({})).toBe('');
+    });
+
+    test('trim preserves nullish values and trims text', () => {
+        expect(se.parseExpression('trim("  hello world  ")')({})).toBe('hello world');
+        expect(se.parseExpression('trim("hello  world")')({})).toBe('hello  world');
+        expect(se.parseExpression('trim(123)')({})).toBe('123');
+        expect(se.parseExpression('trim(false)')({})).toBe('');
+        expect(se.parseExpression('trim(0)')({})).toBe('');
+        expect(se.parseExpression('trim(#null)')({ null: null })).toBeNull();
+        expect(se.parseExpression('trim(#missing)')({})).toBeUndefined();
+    });
+
+    test('defined distinguishes nullish values from other empty or falsey values', () => {
+        expect(se.executeExpression({}, 'defined("")')).toBe(true);
+        expect(se.executeExpression({}, 'defined(0)')).toBe(true);
+        expect(se.executeExpression({}, 'defined(false)')).toBe(true);
+        expect(se.executeExpression({}, 'defined([])')).toBe(true);
+        expect(se.executeExpression({ null: null }, 'defined(#null)')).toBe(false);
+        expect(se.executeExpression({}, 'defined(#missing)')).toBe(false);
+    });
+
+    test('defined and trim are case-insensitive', () => {
+        expect(se.parseExpression('TRIM("  value  ")')({})).toBe('value');
+        expect(se.executeExpression({ null: null }, 'DEFINED(#null)')).toBe(false);
     });
 
     test('if evaluates only the selected branch and preserves its value', () => {
@@ -427,6 +467,9 @@ describe('parser validation', () => {
         'startswith("value")',
         'if(true, 1)',
         'if(true, 1, 2, 3)',
+        '[1,]',
+        '[1 2]',
+        '[1, 2',
         'eq(1, 2)\ttrailing'
     ])('rejects malformed expression %j', (expression) => {
         expect(() => se.executeExpression({}, expression)).toThrow();

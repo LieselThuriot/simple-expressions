@@ -42,6 +42,18 @@ export const examples: DemoExample[] = [
         label: 'Check some text',
         model: JSON.stringify({ message: 'Simple expressions are useful' }, null, 2),
         expression: 'and(not(empty(#message)), match(lower(#message), "useful$"))'
+    },
+    {
+        id: 'membership',
+        label: 'Check list membership',
+        model: JSON.stringify({ role: 'editor', allowedRoles: ['admin', 'editor'] }, null, 2),
+        expression: 'in(#role, #allowedRoles)'
+    },
+    {
+        id: 'normalize-name',
+        label: 'Normalize an optional name',
+        model: JSON.stringify({ displayName: '  Ada Lovelace  ' }, null, 2),
+        expression: 'if(defined(#displayName), trim(#displayName), "Anonymous")'
     }
 ];
 

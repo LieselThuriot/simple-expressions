@@ -16,7 +16,9 @@ enum TokenKind {
     Reference,
     OpenParen,
     CloseParen,
-    Comma
+    Comma,
+    OpenBracket,
+    CloseBracket
 }
 
 class Tokenizer {
@@ -72,6 +74,16 @@ class Tokenizer {
                 this._kind = TokenKind.Comma;
                 this._value = character;
                 return;
+            case '[':
+                this.index++;
+                this._kind = TokenKind.OpenBracket;
+                this._value = character;
+                return;
+            case ']':
+                this.index++;
+                this._kind = TokenKind.CloseBracket;
+                this._value = character;
+                return;
             case '#':
                 this.index++;
                 this.readDelimitedToken();
@@ -114,7 +126,7 @@ class Tokenizer {
     private readDelimitedToken(): void {
         while (this.index < this.source.length) {
             const character = this.source.charAt(this.index);
-            if (character === '(' || character === ')' || character === ',' || character.charCodeAt(0) <= 32) {
+            if (character === '(' || character === ')' || character === ',' || character === '[' || character === ']' || character.charCodeAt(0) <= 32) {
                 return;
             }
             this.index++;
@@ -201,9 +213,23 @@ const endsWith = (value1: any, value2: any): boolean => {
     return typeof value1 === 'string' && value1.endsWith(value2);
 };
 
+const inList = (value: any, list: any): boolean => {
+    return Array.isArray(list) && list.some((item) => equals(value, item));
+};
+
 const lower = (value: any): string => regexInput(value).toLowerCase();
 
 const upper = (value: any): string => regexInput(value).toUpperCase();
+
+const trim = (value: any): any => {
+    if (value === null || value === undefined) {
+        return value;
+    }
+
+    return regexInput(value).trim();
+};
+
+const defined = (value: any): boolean => value !== null && value !== undefined;
 
 const len = (value: any): number => {
     if (value === undefined || value === null) {
@@ -310,9 +336,33 @@ class ExpressionParser {
 
                 return this.parseCall(identifier);
             }
+            case TokenKind.OpenBracket:
+                return this.parseList();
             default:
                 this.fail('expected an expression');
         }
+    }
+
+    private parseList(): Evaluator {
+        this.tokenizer.next();
+
+        if (this.tokenizer.kind === TokenKind.CloseBracket) {
+            this.tokenizer.next();
+            return constantEvaluator([]);
+        }
+
+        const values: Evaluator[] = [this.parseValue()];
+        while (this.tokenizer.kind === TokenKind.Comma) {
+            this.tokenizer.next();
+            values.push(this.parseValue());
+        }
+
+        if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseBracket) {
+            this.fail('expected closing bracket');
+        }
+        this.tokenizer.next();
+
+        return (model) => values.map((value) => value(model));
     }
 
     private parseCall(operator: string): Evaluator {
@@ -391,6 +441,8 @@ class ExpressionParser {
             case 'len':
             case 'lower':
             case 'upper':
+            case 'trim':
+            case 'defined':
                 return 1;
             case 'eq':
             case 'contains':
@@ -399,6 +451,7 @@ class ExpressionParser {
             case 'gt':
             case 'lt':
             case 'match':
+            case 'in':
                 return 2;
             case 'or':
             case 'and':
@@ -423,6 +476,10 @@ class ExpressionParser {
                 return (model) => lower(inner(model));
             case 'upper':
                 return (model) => upper(inner(model));
+            case 'trim':
+                return (model) => trim(inner(model));
+            case 'defined':
+                return (model) => defined(inner(model));
             default:
                 this.fail('invalid operator: ' + operator);
         }
@@ -438,6 +495,8 @@ class ExpressionParser {
                 return (model) => startsWith(left(model), right(model));
             case 'endswith':
                 return (model) => endsWith(left(model), right(model));
+            case 'in':
+                return (model) => inList(left(model), right(model));
             case 'gt':
                 return (model) => greaterThan(left(model), right(model));
             case 'lt':

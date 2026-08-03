@@ -57,7 +57,7 @@ export const getReferenceCompletionContext = (
     }
 
     const previousCharacter = beforeCursor.charAt(hashIndex - 1);
-    if (previousCharacter && !/[\s,(]/.test(previousCharacter)) {
+    if (previousCharacter && !/[\s,(\[]/.test(previousCharacter)) {
         return null;
     }
 
