@@ -34,7 +34,7 @@ evaluator(model);
 
 ## Demo
 
-Try the interactive playground at [lieselthuriot.github.io/simple-expressions](https://lieselthuriot.github.io/simple-expressions/).
+Try the interactive playground at [simple-expressions.liesel.dev](https://simple-expressions.liesel.dev/).
 
 The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the package source bundled locally for the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, and `if`.
 
