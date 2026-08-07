@@ -1,0 +1,3 @@
+[submodule "conformance"]
+	path = conformance
+	url = https://github.com/LieselThuriot/simple-expressions-conformance.git

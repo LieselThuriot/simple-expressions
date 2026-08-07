@@ -92,6 +92,12 @@ Parsed expressions and `SimpleExpression` instances are cached by default. Each 
 
 Expressions and regular-expression patterns are trusted input. `match` accepts JavaScript regex patterns from expression literals and model values. Invalid patterns throw, and untrusted patterns can cause excessive CPU use through catastrophic backtracking (ReDoS). Do not use this package as an untrusted-input validation or authorization boundary.
 
+## Conformance
+
+Cross-language compatibility is tested in the independent [simple-expressions-conformance](https://github.com/LieselThuriot/simple-expressions-conformance) repository. This package has no filesystem or checkout dependency on the C# and Dart implementations.
+
+The conformance specification is versioned and maintained independently. See the conformance repository for the corpus, adapter contract, and cross-language CI.
+
 ## Development
 
 ```bash
