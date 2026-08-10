@@ -1,5 +1,6 @@
 import { Footer } from './components/Footer';
 import { Hero } from './components/Hero';
+import { OfficialPorts } from './components/OfficialPorts';
 import { OperatorReference } from './components/OperatorReference';
 import { Playground } from './components/Playground';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -12,6 +13,7 @@ export const App = () => {
                 <Hero />
                 <Playground />
                 <OperatorReference />
+                <OfficialPorts />
                 <Footer />
             </main>
         </>

@@ -682,6 +682,106 @@ select:focus-visible,
     padding: 24px 28px;
 }
 
+.ports {
+    margin-top: 48px;
+}
+
+.ports-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.ports-heading p {
+    max-width: 300px;
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    text-align: right;
+}
+
+.port-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.port-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    color: inherit;
+    background: var(--surface);
+    box-shadow: 0 18px 50px var(--shadow);
+    text-decoration: none;
+    transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.port-card:hover {
+    border-color: var(--line-hover);
+    background: var(--surface-dim);
+    transform: translateY(-2px);
+}
+
+.port-card:focus-visible {
+    outline: 3px solid var(--blue-ring);
+    outline-offset: 3px;
+}
+
+.port-icon {
+    display: block;
+    width: 76px;
+    height: 76px;
+    flex: 0 0 76px;
+    object-fit: contain;
+}
+
+.port-card-content {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+}
+
+.port-name-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+}
+
+.port-name {
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+.port-platform {
+    color: var(--faint);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.port-description {
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.port-link {
+    color: var(--blue-dark);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
 .operator-table-wrap {
     overflow-x: auto;
 }
@@ -748,6 +848,10 @@ select:focus-visible,
     .reference {
         grid-template-columns: 1fr;
     }
+
+    .port-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 500px) {
@@ -802,5 +906,25 @@ select:focus-visible,
         align-items: flex-start;
         flex-direction: column;
         gap: 8px;
+    }
+
+    .ports-heading {
+        display: block;
+    }
+
+    .ports-heading p {
+        margin-top: 10px;
+        text-align: left;
+    }
+
+    .port-card {
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    .port-icon {
+        width: 58px;
+        height: 58px;
+        flex-basis: 58px;
     }
 }
