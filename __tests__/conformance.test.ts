@@ -12,7 +12,7 @@ type Case = {
     error?: string;
 };
 
-const corpus = JSON.parse(readFileSync(join(__dirname, '..', 'conformance', 'spec', 'v1', 'cases.json'), 'utf8')) as { cases: Case[] };
+const corpus = JSON.parse(readFileSync(join(__dirname, 'conformance', 'spec', 'v1', 'cases.json'), 'utf8')) as { cases: Case[] };
 const cases = corpus.cases;
 
 beforeEach(() => {
