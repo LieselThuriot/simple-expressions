@@ -175,7 +175,13 @@ class Tokenizer {
     }
 }
 
-const equals = (value1: any, value2: any): boolean => value1 == value2;
+const equals = (value1: any, value2: any): boolean => {
+    if (Array.isArray(value1) && Array.isArray(value2)) {
+        return value1.length === value2.length && value1.every((item, index) => equals(item, value2[index]));
+    }
+
+    return value1 == value2;
+};
 const greaterThan = (value1: any, value2: any): boolean => value1 > value2;
 const lessThan = (value1: any, value2: any): boolean => value1 < value2;
 

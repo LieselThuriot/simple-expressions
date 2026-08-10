@@ -63,7 +63,7 @@ Operators are case-insensitive:
 | Operator | Arguments | Behavior |
 | --- | --- | --- |
 | `not` | 1 | Logical negation. |
-| `eq` | 2 | JavaScript loose equality (`==`). |
+| `eq` | 2 | Loose equality (`==`), with structural equality for lists. |
 | `or` | 2+ | Logical OR with short-circuit evaluation. |
 | `and` | 2+ | Logical AND with short-circuit evaluation. |
 | `contains` | 2 | Case-sensitive string containment; the left value must be a string. |
