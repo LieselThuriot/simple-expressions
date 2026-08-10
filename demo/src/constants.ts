@@ -7,7 +7,7 @@ export interface OperatorDefinition {
 
 export const operatorDefinitions: readonly OperatorDefinition[] = [
     { name: 'not', signature: 'not(value)', detail: '1 argument', description: 'Logical negation' },
-    { name: 'eq', signature: 'eq(left, right)', detail: '2 arguments', description: 'Loose equality (==)' },
+    { name: 'eq', signature: 'eq(left, right)', detail: '2 arguments', description: 'Loose equality (==); lists compare structurally' },
     { name: 'or', signature: 'or(a, b, ...)', detail: '2+ arguments', description: 'Logical OR, short-circuits' },
     { name: 'and', signature: 'and(a, b, ...)', detail: '2+ arguments', description: 'Logical AND, short-circuits' },
     { name: 'contains', signature: 'contains(text, part)', detail: '2 arguments', description: 'True if text contains part' },
