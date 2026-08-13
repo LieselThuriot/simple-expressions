@@ -38,7 +38,7 @@
     "build": "node scripts/clean.js && tsc && terser lib/index.js --compress --mangle --output lib/index.js",
     "test": "npm run build && vitest run",
     "demo": "cd demo && npm install && npm run dev",
-    "demo:build": "cd demo && npm install && npm run build",
+    "demo:build": "npm run build && cd demo && npm install && npm run build",
     "demo:preview": "cd demo && npm install && npm run preview",
     "pack:check": "npm pack --dry-run",
     "release": "npm pack && npm publish",

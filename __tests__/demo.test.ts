@@ -14,6 +14,8 @@ import {
     operatorDefinitions,
     resolveModelPath
 } from '../demo/src/expression-completions';
+import { builderOperatorDefinitions, builderSamples, changeBuilderOperator, createBuilderNode, getBuilderReferencePaths, serializeBuilder } from '../demo/src/expression-builder';
+import { parseExpression } from '../src';
 
 describe('demo playground helpers', () => {
     test('parses JSON object, array, and null models', () => {
@@ -141,5 +143,56 @@ describe('demo playground helpers', () => {
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('if');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('trim');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('defined');
+    });
+});
+
+describe('demo expression builder helpers', () => {
+    test('exposes every operator with its expected arity', () => {
+        expect(builderOperatorDefinitions).toHaveLength(19);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 1)).toHaveLength(7);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 2)).toHaveLength(8);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 3)).toHaveLength(1);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 'variadic')).toHaveLength(3);
+    });
+
+    test('creates correctly shaped nodes for fixed and variadic operators', () => {
+        expect(createBuilderNode('not').args).toHaveLength(1);
+        expect(createBuilderNode('if').args).toHaveLength(3);
+        expect(createBuilderNode('and').args).toHaveLength(2);
+    });
+
+    test('preserves and fills arguments when changing operators', () => {
+        const source = createBuilderNode('if');
+        source.args[0] = { kind: 'reference', value: '#ready' };
+        source.args[1] = { kind: 'string', value: 'yes' };
+
+        expect(changeBuilderOperator(source, 'not')).toEqual({
+            kind: 'call', operator: 'not', args: [source.args[0]]
+        });
+        expect(changeBuilderOperator(source, 'if').args).toEqual(source.args);
+        expect(changeBuilderOperator({ ...source, args: source.args.slice(0, 1) }, 'if').args).toHaveLength(3);
+        expect(changeBuilderOperator(source, 'and').args).toEqual(source.args);
+    });
+
+    test('serializes references, literals, lists, and nested calls', () => {
+        expect(serializeBuilder({ kind: 'call', operator: 'in', args: [
+            { kind: 'call', operator: 'lower', args: [{ kind: 'reference', value: '#status' }] },
+            { kind: 'list', items: [{ kind: 'string', value: 'ready' }, { kind: 'string', value: 'approved' }] }
+        ] })).toBe('in(lower(#status), ["ready", "approved"])');
+    });
+
+    test('builds reference dropdown paths from nested model data', () => {
+        expect(getBuilderReferencePaths('{"user":{"name":"Ada","roles":["editor"]},"active":true}')).toEqual([
+            '#user', '#user.name', '#user.roles', '#user.roles.0', '#active'
+        ]);
+        expect(getBuilderReferencePaths('{invalid}')).toEqual([]);
+    });
+
+    test('provides valid, evaluatable builder samples', () => {
+        expect(new Set(builderSamples.map((sample) => sample.id)).size).toBe(builderSamples.length);
+        for (const sample of builderSamples) {
+            const result = evaluatePlayground(sample.model, serializeBuilder(sample.node));
+            expect(result.ok, `${sample.id} should evaluate`).toBe(true);
+        }
     });
 });

@@ -215,13 +215,16 @@ export interface ExpressionEditorProps {
     value: string;
     onChange: (value: string) => void;
     getModelText: () => string;
+    readOnly?: boolean;
 }
 
-export const ExpressionEditor = ({ value, onChange, getModelText }: ExpressionEditorProps) => {
+export const ExpressionEditor = ({ value, onChange, getModelText, readOnly = false }: ExpressionEditorProps) => {
     return (
         <CodeMirror
             value={value}
             onChange={onChange}
+            editable={!readOnly}
+            readOnly={readOnly}
             extensions={[
                 expressionLanguage,
                 syntaxHighlighting(expressionHighlightStyle),
