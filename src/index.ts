@@ -175,9 +175,32 @@ class Tokenizer {
     }
 }
 
-const equals = (value1: any, value2: any): boolean => {
-    if (Array.isArray(value1) && Array.isArray(value2)) {
-        return value1.length === value2.length && value1.every((item, index) => equals(item, value2[index]));
+const equals = (value1: any, value2: any, compared: WeakMap<object, WeakSet<object>> = new WeakMap()): boolean => {
+    if (value1 === value2) {
+        return true;
+    }
+
+    if (value1 !== null && typeof value1 === 'object' && value2 !== null && typeof value2 === 'object') {
+        let counterparts = compared.get(value1);
+        if (counterparts?.has(value2)) {
+            return true;
+        }
+        if (!counterparts) {
+            counterparts = new WeakSet<object>();
+            compared.set(value1, counterparts);
+        }
+        counterparts.add(value2);
+
+        if (Array.isArray(value1) && Array.isArray(value2)) {
+            return value1.length === value2.length && value1.every((item, index) => equals(item, value2[index], compared));
+        }
+
+        if (!Array.isArray(value1) && !Array.isArray(value2)) {
+            const keys1 = Object.keys(value1);
+            const keys2 = Object.keys(value2);
+            return keys1.length === keys2.length && keys1.every((key) =>
+                Object.prototype.hasOwnProperty.call(value2, key) && equals(value1[key], value2[key], compared));
+        }
     }
 
     return value1 == value2;
@@ -237,7 +260,13 @@ const trim = (value: any): any => {
 
 const defined = (value: any): boolean => value !== null && value !== undefined;
 
-const toNumber = (value: any): number => Number(value);
+const toNumber = (value: any, strict: boolean = false): number => {
+    const result = Number(value);
+    if (strict && typeof value === 'string' && (value.trim() === '' || Number.isNaN(result))) {
+        throw new Error('Invalid numeric value');
+    }
+    return result;
+};
 
 const expandNumericValues = (operator: string, values: Evaluator[], model: Model): any[] => {
     const expanded: any[] = [];
@@ -255,13 +284,13 @@ const expandNumericValues = (operator: string, values: Evaluator[], model: Model
     return expanded;
 };
 
-const int = (value: any): number => Math.trunc(toNumber(value));
-const abs = (value: any): number => Math.abs(toNumber(value));
-const floor = (value: any): number => Math.floor(toNumber(value));
-const ceil = (value: any): number => Math.ceil(toNumber(value));
-const sqrt = (value: any): number => Math.sqrt(toNumber(value));
+const int = (value: any): number => Math.trunc(toNumber(value, true));
+const abs = (value: any): number => Math.abs(toNumber(value, true));
+const floor = (value: any): number => Math.floor(toNumber(value, true));
+const ceil = (value: any): number => Math.ceil(toNumber(value, true));
+const sqrt = (value: any): number => Math.sqrt(toNumber(value, true));
 const round = (value: any, decimals: any): number => {
-    const places = toNumber(decimals);
+    const places = toNumber(decimals, true);
     if (!Number.isSafeInteger(places) || places < 0) {
         throw new Error('Round precision must be a non-negative safe integer');
     }
@@ -269,10 +298,10 @@ const round = (value: any, decimals: any): number => {
     if (!Number.isFinite(factor)) {
         throw new Error('Round precision is too large');
     }
-    return Math.round(toNumber(value) * factor) / factor;
+    return Math.round(toNumber(value, true) * factor) / factor;
 };
-const power = (value: any, exponent: any): number => Math.pow(toNumber(value), toNumber(exponent));
-const clamp = (value: any, minimum: any, maximum: any): number => Math.min(Math.max(toNumber(value), toNumber(minimum)), toNumber(maximum));
+const power = (value: any, exponent: any): number => Math.pow(toNumber(value, true), toNumber(exponent, true));
+const clamp = (value: any, minimum: any, maximum: any): number => Math.min(Math.max(toNumber(value, true), toNumber(minimum, true)), toNumber(maximum, true));
 
 const len = (value: any): number => {
     if (value === undefined || value === null) {
@@ -629,34 +658,34 @@ class ExpressionParser {
                     return result;
                 };
             case 'add':
-                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result + toNumber(value), 0);
+                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result + toNumber(value, true), 0);
             case 'sub':
-                return (model) => values.slice(1).reduce((result, value) => result - toNumber(value(model)), toNumber(values[0]!(model)));
+        return (model) => values.slice(1).reduce((result, value) => result - toNumber(value(model), true), toNumber(values[0]!(model), true));
             case 'mul':
-                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result * toNumber(value), 1);
+                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result * toNumber(value, true), 1);
             case 'div':
                 return (model) => values.slice(1).reduce((result, value) => {
-                    const divisor = toNumber(value(model));
+                const divisor = toNumber(value(model), true);
                     if (divisor === 0) {
                         throw new Error('Division by zero');
                     }
                     return result / divisor;
-                }, toNumber(values[0]!(model)));
+                }, toNumber(values[0]!(model), true));
             case 'mod':
                 return (model) => values.slice(1).reduce((result, value) => {
-                    const divisor = toNumber(value(model));
+                const divisor = toNumber(value(model), true);
                     if (divisor === 0) {
                         throw new Error('Division by zero');
                     }
                     return result % divisor;
-                }, toNumber(values[0]!(model)));
+                }, toNumber(values[0]!(model), true));
             case 'min':
                 return (model) => {
                     const expanded = expandNumericValues(operator, values, model);
                     if (expanded.length === 0) {
                         throw new Error('Min requires at least one value');
                     }
-                    return expanded.slice(1).reduce((result, value) => Math.min(result, toNumber(value)), toNumber(expanded[0]));
+                    return expanded.slice(1).reduce((result, value) => Math.min(result, toNumber(value, true)), toNumber(expanded[0], true));
                 };
             case 'max':
                 return (model) => {
@@ -664,7 +693,7 @@ class ExpressionParser {
                     if (expanded.length === 0) {
                         throw new Error('Max requires at least one value');
                     }
-                    return expanded.slice(1).reduce((result, value) => Math.max(result, toNumber(value)), toNumber(expanded[0]));
+                    return expanded.slice(1).reduce((result, value) => Math.max(result, toNumber(value, true)), toNumber(expanded[0], true));
                 };
             default:
                 this.fail('invalid operator: ' + operator);
