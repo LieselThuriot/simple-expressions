@@ -15,6 +15,10 @@ type Case = {
 const corpus = JSON.parse(readFileSync(join(__dirname, 'conformance', 'spec', 'v1', 'cases.json'), 'utf8')) as { cases: Case[] };
 const cases = corpus.cases;
 
+for (const item of cases) {
+    expect([item.value !== undefined, item.truthy !== undefined, item.error !== undefined].filter(Boolean)).toHaveLength(1);
+}
+
 beforeEach(() => {
     se.SimpleExpressions.enableCaches();
     se.SimpleExpressions.setCacheLimit(1000);
