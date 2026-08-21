@@ -887,6 +887,19 @@ select:focus-visible,
     overflow-x: auto;
 }
 
+.operator-subsection + .operator-subsection {
+    margin-top: 26px;
+}
+
+.operator-subsection h3 {
+    margin: 0 0 12px;
+    color: var(--ink);
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .operator-table {
     width: 100%;
     border-collapse: collapse;

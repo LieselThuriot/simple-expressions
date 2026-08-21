@@ -36,7 +36,7 @@ evaluator(model);
 
 Try the interactive playground at [simple-expressions.liesel.dev](https://simple-expressions.liesel.dev/).
 
-The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the package source bundled locally for the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, and `if`.
+The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the package source bundled locally for the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, `if`, and the math operators.
 
 To run the demo locally:
 
@@ -78,8 +78,24 @@ Operators are case-insensitive:
 | `upper` | 1 | Converts a value to uppercase text; falsey values become empty strings. |
 | `trim` | 1 | Trims surrounding whitespace; nullish values remain unchanged and other falsey values become empty strings. |
 | `defined` | 1 | True for every value except `null` and `undefined`. |
+| `int` | 1 | Converts a value with `Number()` and truncates toward zero with `Math.trunc()`. |
+| `num` | 1 | Converts a value with JavaScript `Number()`. |
+| `abs` | 1 | Returns the absolute numeric value. |
+| `floor` | 1 | Rounds down to the nearest integer. |
+| `ceil` | 1 | Rounds up to the nearest integer. |
+| `sqrt` | 1 | Returns the square root. |
 | `concat` | 2+ | Concatenates truthy values after calling `toString()`; falsy values become empty strings. |
+| `add` | 2+ (or 1 list) | Adds numeric values from left to right after JavaScript numeric coercion. List arguments are expanded one level, so `add([1, 2, 3], 4)` returns `10`; an empty list contributes zero. |
+| `sub` | 2+ | Subtracts numeric values from left to right after JavaScript numeric coercion. |
+| `mul` | 2+ (or 1 list) | Multiplies numeric values from left to right after JavaScript numeric coercion. List arguments are expanded one level; an empty list contributes one. |
+| `div` | 2+ | Divides numeric values from left to right after JavaScript numeric coercion. Throws `Division by zero` for a zero divisor. |
+| `mod` | 2+ | Calculates the remainder from left to right after JavaScript numeric coercion. Throws `Division by zero` for a zero divisor. |
+| `min` | 2+ (or 1 list) | Returns the smallest numerically coerced value. List arguments are expanded one level; empty lists throw. |
+| `max` | 2+ (or 1 list) | Returns the largest numerically coerced value. List arguments are expanded one level; empty lists throw. |
+| `round` | 2 | Rounds a numerically coerced value to a non-negative number of decimal places. |
+| `pow` | 2 | Raises a numerically coerced value to a numerically coerced exponent. |
 | `match` | 2 | Tests a value against a JavaScript regular expression pattern. |
+| `clamp` | 3 | Constrains a numerically coerced value between a minimum and maximum. |
 | `if` | 3 | Returns the second or third argument based on the truthiness of the first; only the selected branch is evaluated. |
 
 Unquoted identifiers are operators and must be followed by parentheses. They are not string constants.

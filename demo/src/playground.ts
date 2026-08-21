@@ -78,6 +78,30 @@ export const examples: DemoExample[] = [
         expression: 'len(#tags)'
     },
     {
+        id: 'math',
+        label: 'Calculate an order total',
+        model: formatModel({ quantity: 3, price: 12.5, shipping: 4 }),
+        expression: 'add(mul(#quantity, #price), #shipping)'
+    },
+    {
+        id: 'list-total',
+        label: 'Total a list of values',
+        model: formatModel({ amounts: [12.5, 8, 4.25], fee: 1.25 }),
+        expression: 'add(#amounts, #fee)'
+    },
+    {
+        id: 'rounded-total',
+        label: 'Round a decimal total',
+        model: formatModel({ subtotal: 26.021, tax: 1.234 }),
+        expression: 'round(add(#subtotal, #tax), 2)'
+    },
+    {
+        id: 'bounded-score',
+        label: 'Keep a score in range',
+        model: formatModel({ score: 108, minimum: 0, maximum: 100 }),
+        expression: 'clamp(max(#score, #minimum), #minimum, #maximum)'
+    },
+    {
         id: 'display-label',
         label: 'Format a display label',
         model: formatModel({ user: { name: 'Ada' }, role: 'engineer' }),

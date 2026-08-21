@@ -1,10 +1,10 @@
 {
     "name": "simple-expressions-demo",
     "private": true,
-    "version": "1.1.0",
+    "version": "1.2.0",
     "type": "module",
     "scripts": {
-        "dev": "vite --host",
+        "dev": "vite --host --force",
         "build": "npm run typecheck && vite build",
         "preview": "vite preview",
         "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
@@ -23,9 +23,9 @@
         "simple-expressions": "file:.."
     },
     "devDependencies": {
+        "@types/node": "^26.2.0",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
-        "@types/node": "^25.0.3",
         "@vitejs/plugin-react": "^6.0.0",
         "typescript": "^7.0.2",
         "vite": "^8.1.5"

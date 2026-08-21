@@ -1,6 +1,6 @@
 {
   "name": "simple-expressions",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Simple expression parsing and execution",
   "main": "lib/index.js",
   "types": "./lib/index.d.ts",
@@ -33,7 +33,7 @@
     "execution"
   ],
   "author": "Liesel Thuriot",
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "build": "node scripts/clean.js && tsc && terser lib/index.js --compress --mangle --output lib/index.js",
     "test": "npm run build && vitest run",

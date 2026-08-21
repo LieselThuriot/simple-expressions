@@ -4,9 +4,10 @@ export type BuilderValue = { kind: 'string'; value: string } | { kind: 'number';
 export interface BuilderNode { kind: 'call'; operator: string; args: BuilderValue[]; }
 
 const arity = (operator: string): number | 'variadic' => {
-    if (['not', 'empty', 'len', 'lower', 'upper', 'trim', 'defined'].includes(operator)) return 1;
-    if (['eq', 'contains', 'startswith', 'endswith', 'in', 'gt', 'lt', 'match'].includes(operator)) return 2;
-    if (operator === 'if') return 3;
+    if (['not', 'empty', 'len', 'lower', 'upper', 'trim', 'defined', 'int', 'num', 'abs', 'floor', 'ceil', 'sqrt'].includes(operator)) return 1;
+    if (['eq', 'contains', 'startswith', 'endswith', 'in', 'gt', 'lt', 'match', 'round', 'pow'].includes(operator)) return 2;
+    if (operator === 'if' || operator === 'clamp') return 3;
+    if (['add', 'sub', 'mul', 'div', 'mod', 'min', 'max'].includes(operator)) return 'variadic';
     return 'variadic';
 };
 

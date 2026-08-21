@@ -15,7 +15,6 @@ import {
     resolveModelPath
 } from '../demo/src/expression-completions';
 import { builderOperatorDefinitions, builderSamples, changeBuilderOperator, createBuilderNode, getBuilderReferencePaths, serializeBuilder } from '../demo/src/expression-builder';
-import { parseExpression } from '../src';
 
 describe('demo playground helpers', () => {
     test('parses JSON object, array, and null models', () => {
@@ -136,23 +135,27 @@ describe('demo playground helpers', () => {
     });
 
     test('exposes every case-insensitive parser operator for completion', () => {
-        expect(operatorDefinitions).toHaveLength(19);
-        expect(new Set(operatorDefinitions.map((operator) => operator.name)).size).toBe(19);
+        expect(operatorDefinitions).toHaveLength(35);
+        expect(new Set(operatorDefinitions.map((operator) => operator.name)).size).toBe(35);
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('startswith');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('in');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('if');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('trim');
         expect(operatorDefinitions.map((operator) => operator.name)).toContain('defined');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('add');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('mod');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('round');
+        expect(operatorDefinitions.map((operator) => operator.name)).toContain('clamp');
     });
 });
 
 describe('demo expression builder helpers', () => {
     test('exposes every operator with its expected arity', () => {
-        expect(builderOperatorDefinitions).toHaveLength(19);
-        expect(builderOperatorDefinitions.filter((item) => item.arity === 1)).toHaveLength(7);
-        expect(builderOperatorDefinitions.filter((item) => item.arity === 2)).toHaveLength(8);
-        expect(builderOperatorDefinitions.filter((item) => item.arity === 3)).toHaveLength(1);
-        expect(builderOperatorDefinitions.filter((item) => item.arity === 'variadic')).toHaveLength(3);
+        expect(builderOperatorDefinitions).toHaveLength(35);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 1)).toHaveLength(13);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 2)).toHaveLength(10);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 3)).toHaveLength(2);
+        expect(builderOperatorDefinitions.filter((item) => item.arity === 'variadic')).toHaveLength(10);
     });
 
     test('creates correctly shaped nodes for fixed and variadic operators', () => {
@@ -194,5 +197,20 @@ describe('demo expression builder helpers', () => {
             const result = evaluatePlayground(sample.model, serializeBuilder(sample.node));
             expect(result.ok, `${sample.id} should evaluate`).toBe(true);
         }
+    });
+
+    test('includes a math example', () => {
+        const example = examples.find((candidate) => candidate.id === 'math');
+
+        expect(example).toBeDefined();
+        expect(evaluatePlayground(example!.model, example!.expression)).toEqual({
+            ok: true,
+            value: { display: '41.5', type: 'number' }
+        });
+    });
+
+    test('includes the rounding and clamping examples', () => {
+        expect(examples.find((candidate) => candidate.id === 'rounded-total')).toBeDefined();
+        expect(examples.find((candidate) => candidate.id === 'bounded-score')).toBeDefined();
     });
 });

@@ -237,6 +237,43 @@ const trim = (value: any): any => {
 
 const defined = (value: any): boolean => value !== null && value !== undefined;
 
+const toNumber = (value: any): number => Number(value);
+
+const expandNumericValues = (operator: string, values: Evaluator[], model: Model): any[] => {
+    const expanded: any[] = [];
+    for (const value of values) {
+        const result = value(model);
+        if (values.length === 1 && !Array.isArray(result)) {
+            throw new Error('Invalid Expression: operator ' + operator + ' expects at least two arguments');
+        }
+        if (Array.isArray(result)) {
+            expanded.push(...result);
+        } else {
+            expanded.push(result);
+        }
+    }
+    return expanded;
+};
+
+const int = (value: any): number => Math.trunc(toNumber(value));
+const abs = (value: any): number => Math.abs(toNumber(value));
+const floor = (value: any): number => Math.floor(toNumber(value));
+const ceil = (value: any): number => Math.ceil(toNumber(value));
+const sqrt = (value: any): number => Math.sqrt(toNumber(value));
+const round = (value: any, decimals: any): number => {
+    const places = toNumber(decimals);
+    if (!Number.isSafeInteger(places) || places < 0) {
+        throw new Error('Round precision must be a non-negative safe integer');
+    }
+    const factor = 10 ** places;
+    if (!Number.isFinite(factor)) {
+        throw new Error('Round precision is too large');
+    }
+    return Math.round(toNumber(value) * factor) / factor;
+};
+const power = (value: any, exponent: any): number => Math.pow(toNumber(value), toNumber(exponent));
+const clamp = (value: any, minimum: any, maximum: any): number => Math.min(Math.max(toNumber(value), toNumber(minimum)), toNumber(maximum));
+
 const len = (value: any): number => {
     if (value === undefined || value === null) {
         return 0;
@@ -396,7 +433,12 @@ class ExpressionParser {
 
         if (arity === 'variadic') {
             if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
-                this.fail('operator ' + operator + ' expects at least two arguments');
+                if ((this.tokenizer.kind as TokenKind) !== TokenKind.CloseParen || !this.supportsSingleListArgument(normalizedOperator)) {
+                    this.fail('operator ' + operator + ' expects at least two arguments');
+                }
+
+                this.tokenizer.next();
+                return this.compileVariadic(normalizedOperator, [left]);
             }
 
             const values: Evaluator[] = [left];
@@ -449,6 +491,12 @@ class ExpressionParser {
             case 'upper':
             case 'trim':
             case 'defined':
+            case 'int':
+            case 'num':
+            case 'abs':
+            case 'floor':
+            case 'ceil':
+            case 'sqrt':
                 return 1;
             case 'eq':
             case 'contains':
@@ -458,10 +506,21 @@ class ExpressionParser {
             case 'lt':
             case 'match':
             case 'in':
+            case 'round':
+            case 'pow':
                 return 2;
+            case 'clamp':
+                return 3;
             case 'or':
             case 'and':
             case 'concat':
+            case 'add':
+            case 'sub':
+            case 'mul':
+            case 'div':
+            case 'mod':
+            case 'min':
+            case 'max':
                 return 'variadic';
             case 'if':
                 return 3;
@@ -486,6 +545,18 @@ class ExpressionParser {
                 return (model) => trim(inner(model));
             case 'defined':
                 return (model) => defined(inner(model));
+            case 'int':
+                return (model) => int(inner(model));
+            case 'num':
+                return (model) => toNumber(inner(model));
+            case 'abs':
+                return (model) => abs(inner(model));
+            case 'floor':
+                return (model) => floor(inner(model));
+            case 'ceil':
+                return (model) => ceil(inner(model));
+            case 'sqrt':
+                return (model) => sqrt(inner(model));
             default:
                 this.fail('invalid operator: ' + operator);
         }
@@ -513,9 +584,17 @@ class ExpressionParser {
                     return (model) => evaluateCompiledRegex(left(model), regex);
                 }
                 return (model) => evaluateRegex(left(model), right(model));
+            case 'round':
+                return (model) => round(left(model), right(model));
+            case 'pow':
+                return (model) => power(left(model), right(model));
             default:
                 this.fail('invalid operator: ' + operator);
         }
+    }
+
+    private supportsSingleListArgument(operator: string): boolean {
+        return operator === 'add' || operator === 'mul' || operator === 'min' || operator === 'max';
     }
 
     private compileVariadic(operator: string, values: Evaluator[]): Evaluator {
@@ -549,6 +628,44 @@ class ExpressionParser {
                     }
                     return result;
                 };
+            case 'add':
+                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result + toNumber(value), 0);
+            case 'sub':
+                return (model) => values.slice(1).reduce((result, value) => result - toNumber(value(model)), toNumber(values[0]!(model)));
+            case 'mul':
+                return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result * toNumber(value), 1);
+            case 'div':
+                return (model) => values.slice(1).reduce((result, value) => {
+                    const divisor = toNumber(value(model));
+                    if (divisor === 0) {
+                        throw new Error('Division by zero');
+                    }
+                    return result / divisor;
+                }, toNumber(values[0]!(model)));
+            case 'mod':
+                return (model) => values.slice(1).reduce((result, value) => {
+                    const divisor = toNumber(value(model));
+                    if (divisor === 0) {
+                        throw new Error('Division by zero');
+                    }
+                    return result % divisor;
+                }, toNumber(values[0]!(model)));
+            case 'min':
+                return (model) => {
+                    const expanded = expandNumericValues(operator, values, model);
+                    if (expanded.length === 0) {
+                        throw new Error('Min requires at least one value');
+                    }
+                    return expanded.slice(1).reduce((result, value) => Math.min(result, toNumber(value)), toNumber(expanded[0]));
+                };
+            case 'max':
+                return (model) => {
+                    const expanded = expandNumericValues(operator, values, model);
+                    if (expanded.length === 0) {
+                        throw new Error('Max requires at least one value');
+                    }
+                    return expanded.slice(1).reduce((result, value) => Math.max(result, toNumber(value)), toNumber(expanded[0]));
+                };
             default:
                 this.fail('invalid operator: ' + operator);
         }
@@ -558,6 +675,8 @@ class ExpressionParser {
         switch (operator) {
             case 'if':
                 return (model) => condition(model) ? whenTrue(model) : whenFalse(model);
+            case 'clamp':
+                return (model) => clamp(condition(model), whenTrue(model), whenFalse(model));
             default:
                 this.fail('invalid operator: ' + operator);
         }
