@@ -773,8 +773,7 @@ export class SimpleExpressions {
         }
 
         if (limit <= 0) {
-            this.disableCaches();
-            return;
+            throw new Error('Cache limit must be at least 1');
         }
 
         this._cacheLimit = limit;

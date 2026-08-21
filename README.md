@@ -102,7 +102,7 @@ Unquoted identifiers are operators and must be followed by parentheses. They are
 
 ## Caching
 
-Parsed expressions and `SimpleExpression` instances are cached by default. Each cache is bounded to 1,000 entries and evicts the oldest entry when full. Use `SimpleExpressions.setCacheLimit(limit)` to set a positive safe-integer limit; lowering it immediately evicts the oldest existing entries. A limit of zero or less disables caching, the same as `disableCaches()`, which also clears existing entries. Use `SimpleExpressions.clear()` or `enableCaches()` to manage this behavior when needed.
+Parsed expressions and `SimpleExpression` instances are cached by default. Each cache is bounded to 1,000 entries and evicts the oldest entry when full. Use `SimpleExpressions.setCacheLimit(limit)` to set a positive safe-integer limit; lowering it immediately evicts the oldest existing entries. A limit of zero or less throws; use `disableCaches()` to disable caching, which also clears existing entries, and `enableCaches()` to resume caching.
 
 ## Security
 
