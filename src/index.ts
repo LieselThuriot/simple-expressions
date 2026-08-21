@@ -285,6 +285,12 @@ const expandNumericValues = (operator: string, values: Evaluator[], model: Model
 };
 
 const int = (value: any): number => Math.trunc(toNumber(value, true));
+const num = (value: any): number => {
+    if (Array.isArray(value)) {
+        throw new Error('Invalid numeric value');
+    }
+    return toNumber(value, true);
+};
 const abs = (value: any): number => Math.abs(toNumber(value, true));
 const floor = (value: any): number => Math.floor(toNumber(value, true));
 const ceil = (value: any): number => Math.ceil(toNumber(value, true));
@@ -577,7 +583,7 @@ class ExpressionParser {
             case 'int':
                 return (model) => int(inner(model));
             case 'num':
-                return (model) => toNumber(inner(model), true);
+                return (model) => num(inner(model));
             case 'abs':
                 return (model) => abs(inner(model));
             case 'floor':

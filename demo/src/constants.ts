@@ -27,7 +27,7 @@ export const operatorDefinitions: readonly OperatorDefinition[] = [
     { name: 'trim', signature: 'trim(value)', detail: '1 argument', arity: 1, category: 'Text and collections', description: 'Trims surrounding whitespace; nullish values remain unchanged' },
     { name: 'defined', signature: 'defined(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'True unless the value is null or undefined' },
     { name: 'int', signature: 'int(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Strictly converts to a number, then truncates toward zero' },
-    { name: 'num', signature: 'num(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Strictly converts a value to a number' },
+    { name: 'num', signature: 'num(value)', detail: '1 scalar argument', arity: 1, category: 'Conversion and numeric', description: 'Strictly converts a scalar value to a number' },
     { name: 'abs', signature: 'abs(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Returns the absolute value after strict conversion' },
     { name: 'floor', signature: 'floor(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Rounds down after strict numeric conversion' },
     { name: 'ceil', signature: 'ceil(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Rounds up after strict numeric conversion' },

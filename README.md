@@ -60,7 +60,7 @@ Constants:
 
 String backslashes are retained literally; they only affect whether a quote closes the string. There are no `null` or `undefined` literals, no object literals, and exactly one complete expression is required. Bare identifiers other than `true` and `false` are operator names and must be followed by parentheses.
 
-Model references start with `#`. Nested values use dots, such as `#user.name`. A literal own key such as `"user.name"` takes precedence over nested traversal. References only resolve own properties; inherited values are never read. The segments `__proto__`, `constructor`, and `prototype` are rejected.
+Model references start with `#`. Nested values use dots, such as `#user.name`. A literal own key such as `"user.name"` takes precedence over nested traversal. References only resolve own properties; inherited values are never read. JavaScript arrays currently expose numeric keys and `length` through this mechanism, but that is an incidental runtime behavior rather than a portable expression contract. Do not traverse arrays by reference in expressions shared with other implementations. The segments `__proto__`, `constructor`, and `prototype` are rejected.
 
 Operators are case-insensitive:
 
@@ -83,7 +83,7 @@ Operators are case-insensitive:
 | `trim` | 1 | Trims surrounding whitespace; nullish values remain unchanged and other falsey values become empty strings. |
 | `defined` | 1 | True for every value except `null` and `undefined`. |
 | `int` | 1 | Converts a value to a number and truncates toward zero with `Math.trunc()`; empty, whitespace, and invalid strings throw. |
-| `num` | 1 | Converts a value to a number; empty, whitespace, and invalid strings throw. |
+| `num` | 1 | Converts a scalar value to a number; lists, empty strings, whitespace strings, and invalid strings throw. |
 | `abs` | 1 | Returns the absolute numeric value; invalid strings throw. |
 | `floor` | 1 | Rounds down to the nearest integer; invalid strings throw. |
 | `ceil` | 1 | Rounds up to the nearest integer; invalid strings throw. |
