@@ -577,7 +577,7 @@ class ExpressionParser {
             case 'int':
                 return (model) => int(inner(model));
             case 'num':
-                return (model) => toNumber(inner(model));
+                return (model) => toNumber(inner(model), true);
             case 'abs':
                 return (model) => abs(inner(model));
             case 'floor':

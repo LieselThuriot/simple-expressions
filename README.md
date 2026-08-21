@@ -63,7 +63,7 @@ Operators are case-insensitive:
 | Operator | Arguments | Behavior |
 | --- | --- | --- |
 | `not` | 1 | Logical negation. |
-| `eq` | 2 | Loose equality (`==`), with structural equality for lists. |
+| `eq` | 2 | Loose equality (`==`), with structural equality for lists and objects. Cyclic values are supported. |
 | `or` | 2+ | Logical OR with short-circuit evaluation. |
 | `and` | 2+ | Logical AND with short-circuit evaluation. |
 | `contains` | 2 | Case-sensitive string containment; the left value must be a string. |
@@ -78,8 +78,8 @@ Operators are case-insensitive:
 | `upper` | 1 | Converts a value to uppercase text; falsey values become empty strings. |
 | `trim` | 1 | Trims surrounding whitespace; nullish values remain unchanged and other falsey values become empty strings. |
 | `defined` | 1 | True for every value except `null` and `undefined`. |
-| `int` | 1 | Converts a value with `Number()` and truncates toward zero with `Math.trunc()`. |
-| `num` | 1 | Converts a value with JavaScript `Number()`. |
+| `int` | 1 | Converts a value to a number and truncates toward zero with `Math.trunc()`; invalid strings throw. |
+| `num` | 1 | Converts a value to a number; empty, whitespace, and invalid strings throw. |
 | `abs` | 1 | Returns the absolute numeric value. |
 | `floor` | 1 | Rounds down to the nearest integer. |
 | `ceil` | 1 | Rounds up to the nearest integer. |
