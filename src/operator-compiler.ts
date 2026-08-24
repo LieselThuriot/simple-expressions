@@ -32,6 +32,8 @@ import {
 
 export type OperatorArity = 1 | 2 | 3 | 'variadic';
 
+const singleListOperators = new Set(['add', 'sub', 'mul', 'div', 'mod', 'min', 'max']);
+
 export const getOperatorArity = (operator: string): OperatorArity | undefined => {
     switch (operator) {
         case 'not':
@@ -79,7 +81,7 @@ export const getOperatorArity = (operator: string): OperatorArity | undefined =>
 };
 
 export const supportsSingleListArgument = (operator: string): boolean => {
-    return operator === 'add' || operator === 'mul' || operator === 'min' || operator === 'max';
+    return singleListOperators.has(operator);
 };
 
 const compileUnary = (operator: string, inner: Evaluator): Evaluator => {
@@ -146,6 +148,20 @@ const compileBinary = (operator: string, left: Evaluator, right: Evaluator): Eva
     }
 };
 
+const compileNumericReduction = (
+    operator: string,
+    values: Evaluator[],
+    minimumValues: number,
+    cardinalityError: string,
+    reduce: (left: number, right: number) => number
+): Evaluator => (model) => {
+    const numbers = expandNumericValues(operator, values, model).map((value) => toNumber(value));
+    if (numbers.length < minimumValues) {
+        throw new Error(cardinalityError);
+    }
+    return numbers.slice(1).reduce((result, value) => reduce(result, value), numbers[0]!);
+};
+
 const compileVariadic = (operator: string, values: Evaluator[]): Evaluator => {
     switch (operator) {
         case 'or':
@@ -178,43 +194,29 @@ const compileVariadic = (operator: string, values: Evaluator[]): Evaluator => {
                 return result;
             };
         case 'add':
-            return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result + toNumber(value, true), 0);
+            return (model) => expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result + value, 0);
         case 'sub':
-            return (model) => values.slice(1).reduce((result, value) => result - toNumber(value(model), true), toNumber(values[0]!(model), true));
+            return compileNumericReduction(operator, values, 2, 'Sub requires at least two values', (left, right) => left - right);
         case 'mul':
-            return (model) => expandNumericValues(operator, values, model).reduce((result, value) => result * toNumber(value, true), 1);
+            return (model) => expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result * value, 1);
         case 'div':
-            return (model) => values.slice(1).reduce((result, value) => {
-                const divisor = toNumber(value(model), true);
+            return compileNumericReduction(operator, values, 2, 'Div requires at least two values', (dividend, divisor) => {
                 if (divisor === 0) {
                     throw new Error('Division by zero');
                 }
-                return result / divisor;
-            }, toNumber(values[0]!(model), true));
+                return dividend / divisor;
+            });
         case 'mod':
-            return (model) => values.slice(1).reduce((result, value) => {
-                const divisor = toNumber(value(model), true);
+            return compileNumericReduction(operator, values, 2, 'Mod requires at least two values', (dividend, divisor) => {
                 if (divisor === 0) {
                     throw new Error('Division by zero');
                 }
-                return result % divisor;
-            }, toNumber(values[0]!(model), true));
+                return dividend % divisor;
+            });
         case 'min':
-            return (model) => {
-                const expanded = expandNumericValues(operator, values, model);
-                if (expanded.length === 0) {
-                    throw new Error('Min requires at least one value');
-                }
-                return expanded.slice(1).reduce((result, value) => Math.min(result, toNumber(value, true)), toNumber(expanded[0], true));
-            };
+            return compileNumericReduction(operator, values, 1, 'Min requires at least one value', Math.min);
         case 'max':
-            return (model) => {
-                const expanded = expandNumericValues(operator, values, model);
-                if (expanded.length === 0) {
-                    throw new Error('Max requires at least one value');
-                }
-                return expanded.slice(1).reduce((result, value) => Math.max(result, toNumber(value, true)), toNumber(expanded[0], true));
-            };
+            return compileNumericReduction(operator, values, 1, 'Max requires at least one value', Math.max);
         default:
             throw new Error('Invalid Expression: invalid operator: ' + operator);
     }

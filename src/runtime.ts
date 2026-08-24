@@ -94,43 +94,62 @@ export const trim = (value: any): any => {
 
 export const defined = (value: any): boolean => value !== null && value !== undefined;
 
-export const toNumber = (value: any, strict: boolean = false): number => {
-    const result = Number(value);
-    if (strict && typeof value === 'string' && (value.trim() === '' || Number.isNaN(result))) {
+export const toNumber = (value: any): number => {
+    if (typeof value === 'number') {
+        if (Number.isFinite(value)) {
+            return value;
+        }
         throw new Error('Invalid numeric value');
     }
-    return result;
+
+    if (typeof value === 'string' && value.trim() !== '') {
+        const result = Number(value);
+        if (Number.isFinite(result)) {
+            return result;
+        }
+    }
+
+    throw new Error('Invalid numeric value');
 };
 
 export const expandNumericValues = (operator: string, values: Evaluator[], model: Model): any[] => {
     const expanded: any[] = [];
+    const activeArrays = new WeakSet<any[]>();
+
+    const append = (value: any): void => {
+        if (!Array.isArray(value)) {
+            expanded.push(value);
+            return;
+        }
+        if (activeArrays.has(value)) {
+            throw new Error('Invalid numeric value');
+        }
+
+        activeArrays.add(value);
+        for (const item of value) {
+            append(item);
+        }
+        activeArrays.delete(value);
+    };
+
     for (const value of values) {
         const result = value(model);
         if (values.length === 1 && !Array.isArray(result)) {
-            throw new Error('Invalid Expression: operator ' + operator + ' expects at least two arguments');
+            throw new Error('Invalid Expression: operator ' + operator + ' expects at least two arguments or one list argument');
         }
-        if (Array.isArray(result)) {
-            expanded.push(...result);
-        } else {
-            expanded.push(result);
-        }
+        append(result);
     }
     return expanded;
 };
 
-export const int = (value: any): number => Math.trunc(toNumber(value, true));
-export const num = (value: any): number => {
-    if (Array.isArray(value)) {
-        throw new Error('Invalid numeric value');
-    }
-    return toNumber(value, true);
-};
-export const abs = (value: any): number => Math.abs(toNumber(value, true));
-export const floor = (value: any): number => Math.floor(toNumber(value, true));
-export const ceil = (value: any): number => Math.ceil(toNumber(value, true));
-export const sqrt = (value: any): number => Math.sqrt(toNumber(value, true));
+export const int = (value: any): number => Math.trunc(toNumber(value));
+export const num = (value: any): number => toNumber(value);
+export const abs = (value: any): number => Math.abs(toNumber(value));
+export const floor = (value: any): number => Math.floor(toNumber(value));
+export const ceil = (value: any): number => Math.ceil(toNumber(value));
+export const sqrt = (value: any): number => Math.sqrt(toNumber(value));
 export const round = (value: any, decimals: any): number => {
-    const places = toNumber(decimals, true);
+    const places = toNumber(decimals);
     if (!Number.isSafeInteger(places) || places < 0) {
         throw new Error('Round precision must be a non-negative safe integer');
     }
@@ -138,10 +157,10 @@ export const round = (value: any, decimals: any): number => {
     if (!Number.isFinite(factor)) {
         throw new Error('Round precision is too large');
     }
-    return Math.round(toNumber(value, true) * factor) / factor;
+    return Math.round(toNumber(value) * factor) / factor;
 };
-export const power = (value: any, exponent: any): number => Math.pow(toNumber(value, true), toNumber(exponent, true));
-export const clamp = (value: any, minimum: any, maximum: any): number => Math.min(Math.max(toNumber(value, true), toNumber(minimum, true)), toNumber(maximum, true));
+export const power = (value: any, exponent: any): number => Math.pow(toNumber(value), toNumber(exponent));
+export const clamp = (value: any, minimum: any, maximum: any): number => Math.min(Math.max(toNumber(value), toNumber(minimum)), toNumber(maximum));
 
 export const len = (value: any): number => {
     if (value === undefined || value === null) {
