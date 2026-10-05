@@ -1,3 +1,4 @@
+import { ExpressionEvaluationException, ExpressionParseException } from './errors';
 import {
     Evaluator,
     abs,
@@ -21,6 +22,7 @@ import {
     lessThan,
     lower,
     num,
+    numericResult,
     power,
     round,
     sqrt,
@@ -113,7 +115,7 @@ const compileUnary = (operator: string, inner: Evaluator): Evaluator => {
         case 'sqrt':
             return (model) => sqrt(inner(model));
         default:
-            throw new Error('Invalid Expression: invalid operator: ' + operator);
+            throw new ExpressionParseException('Invalid Expression: invalid operator: ' + operator);
     }
 };
 
@@ -135,7 +137,12 @@ const compileBinary = (operator: string, left: Evaluator, right: Evaluator): Eva
             return (model) => lessThan(left(model), right(model));
         case 'match':
             if (right.hasConstantValue && !!right.constantValue && typeof right.constantValue === 'string') {
-                const regex = new RegExp(right.constantValue);
+                let regex: RegExp;
+                try {
+                    regex = new RegExp(right.constantValue);
+                } catch (error) {
+                    throw new ExpressionParseException('Invalid Expression: invalid regular expression: ' + (error as Error).message);
+                }
                 return (model) => evaluateCompiledRegex(left(model), regex);
             }
             return (model) => evaluateRegex(left(model), right(model));
@@ -144,7 +151,7 @@ const compileBinary = (operator: string, left: Evaluator, right: Evaluator): Eva
         case 'pow':
             return (model) => power(left(model), right(model));
         default:
-            throw new Error('Invalid Expression: invalid operator: ' + operator);
+            throw new ExpressionParseException('Invalid Expression: invalid operator: ' + operator);
     }
 };
 
@@ -157,9 +164,9 @@ const compileNumericReduction = (
 ): Evaluator => (model) => {
     const numbers = expandNumericValues(operator, values, model).map((value) => toNumber(value));
     if (numbers.length < minimumValues) {
-        throw new Error(cardinalityError);
+        throw new ExpressionEvaluationException(cardinalityError);
     }
-    return numbers.slice(1).reduce((result, value) => reduce(result, value), numbers[0]!);
+    return numericResult(numbers.slice(1).reduce((result, value) => reduce(result, value), numbers[0]!));
 };
 
 const compileVariadic = (operator: string, values: Evaluator[]): Evaluator => {
@@ -194,22 +201,22 @@ const compileVariadic = (operator: string, values: Evaluator[]): Evaluator => {
                 return result;
             };
         case 'add':
-            return (model) => expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result + value, 0);
+            return (model) => numericResult(expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result + value, 0));
         case 'sub':
             return compileNumericReduction(operator, values, 2, 'Sub requires at least two values', (left, right) => left - right);
         case 'mul':
-            return (model) => expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result * value, 1);
+            return (model) => numericResult(expandNumericValues(operator, values, model).map((value) => toNumber(value)).reduce((result, value) => result * value, 1));
         case 'div':
             return compileNumericReduction(operator, values, 2, 'Div requires at least two values', (dividend, divisor) => {
                 if (divisor === 0) {
-                    throw new Error('Division by zero');
+                    throw new ExpressionEvaluationException('Division by zero');
                 }
                 return dividend / divisor;
             });
         case 'mod':
             return compileNumericReduction(operator, values, 2, 'Mod requires at least two values', (dividend, divisor) => {
                 if (divisor === 0) {
-                    throw new Error('Division by zero');
+                    throw new ExpressionEvaluationException('Division by zero');
                 }
                 return dividend % divisor;
             });
@@ -218,7 +225,7 @@ const compileVariadic = (operator: string, values: Evaluator[]): Evaluator => {
         case 'max':
             return compileNumericReduction(operator, values, 1, 'Max requires at least one value', Math.max);
         default:
-            throw new Error('Invalid Expression: invalid operator: ' + operator);
+            throw new ExpressionParseException('Invalid Expression: invalid operator: ' + operator);
     }
 };
 
@@ -229,7 +236,7 @@ const compileTernary = (operator: string, condition: Evaluator, whenTrue: Evalua
         case 'clamp':
             return (model) => clamp(condition(model), whenTrue(model), whenFalse(model));
         default:
-            throw new Error('Invalid Expression: invalid operator: ' + operator);
+            throw new ExpressionParseException('Invalid Expression: invalid operator: ' + operator);
     }
 };
 
@@ -244,6 +251,6 @@ export const compileOperator = (operator: string, args: Evaluator[]): Evaluator 
         case 'variadic':
             return compileVariadic(operator, args);
         default:
-            throw new Error('Invalid Expression: invalid operator: ' + operator);
+            throw new ExpressionParseException('Invalid Expression: invalid operator: ' + operator);
     }
 };

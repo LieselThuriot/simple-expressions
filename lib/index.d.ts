@@ -1,3 +1,4 @@
+export { ExpressionParseException, ExpressionEvaluationException } from './errors';
 type Model = {
     [key: string]: any;
 };
@@ -19,4 +20,3 @@ export declare class SimpleExpression {
     constructor(expression: string | boolean);
     evaluate(model: Model): boolean;
 }
-export {};

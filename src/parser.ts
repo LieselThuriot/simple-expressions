@@ -1,5 +1,6 @@
+import { ExpressionParseException } from './errors';
 import { compileOperator, getOperatorArity, supportsSingleListArgument } from './operator-compiler';
-import { Evaluator, constantEvaluator, referenceEvaluator } from './runtime';
+import { Evaluator, constantEvaluator, normalizeZero, referenceEvaluator } from './runtime';
 import { TokenKind, Tokenizer } from './tokenizer';
 
 class ExpressionParser {
@@ -26,8 +27,11 @@ class ExpressionParser {
             }
             case TokenKind.Number: {
                 const value = Number(this.tokenizer.value);
+                if (!Number.isFinite(value)) {
+                    throw new ExpressionParseException('Invalid numeric value');
+                }
                 this.tokenizer.next();
-                return constantEvaluator(value);
+                return constantEvaluator(normalizeZero(value));
             }
             case TokenKind.Reference: {
                 const path = this.tokenizer.value;
@@ -59,7 +63,7 @@ class ExpressionParser {
 
         if (this.tokenizer.kind === TokenKind.CloseBracket) {
             this.tokenizer.next();
-            return constantEvaluator([]);
+            return () => [];
         }
 
         const values: Evaluator[] = [this.parseValue()];
@@ -126,7 +130,7 @@ class ExpressionParser {
         }
 
         if ((this.tokenizer.kind as TokenKind) !== TokenKind.Comma) {
-            this.fail('operator ' + operator + ' expects two arguments');
+            this.fail('operator ' + operator + (arity === 2 ? ' expects two arguments' : ' expects three arguments'));
         }
         this.tokenizer.next();
 
@@ -154,7 +158,7 @@ class ExpressionParser {
     }
 
     private fail(message: string): never {
-        throw new Error('Invalid Expression at ' + this.tokenizer.position + ': ' + message);
+        throw new ExpressionParseException('Invalid Expression at ' + this.tokenizer.position + ': ' + message);
     }
 }
 

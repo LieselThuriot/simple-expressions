@@ -4,12 +4,16 @@ const formatModel = (model: Record<string, unknown>): string => JSON.stringify(m
 
 export const initialModel = formatModel(
     {
-        user: { name: 'Ada', role: 'engineer' },
-        score: 8
+        account: { role: 'editor', active: true },
+        document: { status: 'review' }
     }
 );
 
-export const initialExpression = 'and(eq(#user.name, "Ada"), gt(#score, 5))';
+export const initialExpression = `and(
+    eq(#account.role, "editor"),
+    #account.active,
+    eq(#document.status, "review")
+)`;
 
 export interface DemoExample {
     id: string;
@@ -20,92 +24,134 @@ export interface DemoExample {
 
 export const examples: DemoExample[] = [
     {
-        id: 'welcome',
-        label: 'Check a condition',
+        id: 'editor-review',
+        label: 'Approve an editor review',
         model: initialModel,
         expression: initialExpression
     },
     {
-        id: 'greeting',
-        label: 'Build a greeting',
-        model: formatModel({ user: { name: 'Ada' } }),
-        expression: 'concat("Hello, ", #user.name, "!")'
-    },
-    {
-        id: 'status',
-        label: 'Choose a score status',
-        model: formatModel({ score: 8 }),
-        expression: 'if(and(gt(#score, 5), lt(#score, 10)), "ready", "keep practicing")'
-    },
-    {
-        id: 'search',
-        label: 'Search normalized text',
-        model: formatModel({ message: 'Simple expressions are useful' }),
-        expression: 'and(not(empty(#message)), match(lower(#message), "useful$"))'
-    },
-    {
-        id: 'membership',
-        label: 'Check access with OR',
-        model: formatModel({ role: 'editor', allowedRoles: ['editor', 'reviewer'] }),
-        expression: 'or(eq(#role, "admin"), in(#role, #allowedRoles))'
-    },
-    {
-        id: 'normalize-name',
-        label: 'Trim an optional name',
-        model: formatModel({ displayName: '  Ada Lovelace  ' }),
-        expression: 'if(defined(#displayName), trim(#displayName), "Anonymous")'
-    },
-    {
-        id: 'text-boundaries',
-        label: 'Check text boundaries',
-        model: formatModel({ slug: 'simple-expressions' }),
+        id: 'shipping-eligibility',
+        label: 'Check shipping eligibility',
+        model: formatModel({ total: 74.5, country: 'CA', express: false }),
         expression: `and(
-    startswith(#slug, "simple"),
-    contains(#slug, "-"),
-    endswith(#slug, "expressions")
+    or(
+        eq(#country, "US"),
+        eq(#country, "CA")
+    ),
+    gt(#total, 50),
+    not(#express)
 )`
     },
     {
-        id: 'literal-list',
-        label: 'Check a literal list',
-        model: formatModel({ status: 'READY' }),
-        expression: 'in(lower(#status), ["ready", "approved"])'
+        id: 'profile-label',
+        label: 'Clean up a profile label',
+        model: formatModel({ firstName: '  Ada  ', lastName: 'Lovelace', handle: '' }),
+        expression: `if(
+    empty(#handle),
+    concat(upper(trim(#firstName)), " ", trim(#lastName)),
+    concat("@", lower(trim(#handle)))
+)`
     },
     {
-        id: 'tag-count',
-        label: 'Count model values',
-        model: formatModel({ tags: ['expressions', 'demo', 'typed'] }),
-        expression: 'len(#tags)'
+        id: 'slug-check',
+        label: 'Validate a project slug',
+        model: formatModel({ slug: 'simple-expressions-v2' }),
+        expression: `and(
+    startswith(#slug, "simple"),
+    contains(#slug, "-"),
+    endswith(#slug, "v2"),
+    match(#slug, "^[a-z0-9-]+$")
+)`
     },
     {
-        id: 'math',
-        label: 'Calculate an order total',
-        model: formatModel({ quantity: 3, price: 12.5, shipping: 4 }),
-        expression: 'add(mul(#quantity, #price), #shipping)'
+        id: 'status-label',
+        label: 'Choose a delivery message',
+        model: formatModel({ status: 'IN_TRANSIT', attempts: 2, known: ['ready', 'in_transit', 'delivered'] }),
+        expression: `if(
+    and(
+        in(lower(#status), #known),
+        lt(#attempts, 3)
+    ),
+    concat("Package is ", lower(trim(#status))),
+    "Needs attention"
+)`
     },
     {
-        id: 'list-total',
-        label: 'Total a list of values',
-        model: formatModel({ amounts: [12.5, 8, 4.25], fee: 1.25 }),
-        expression: 'add(#amounts, #fee)'
+        id: 'cart-total',
+        label: 'Calculate a cart total',
+        model: formatModel({ prices: [19.99, 8.5, 12], quantity: 2, discount: 5.25, shipping: 4.99 }),
+        expression: `round(
+    sub(
+        add(mul(add(#prices), #quantity), #shipping),
+        #discount
+    ),
+    2
+)`
     },
     {
-        id: 'rounded-total',
-        label: 'Round a decimal total',
-        model: formatModel({ subtotal: 26.021, tax: 1.234 }),
-        expression: 'round(add(#subtotal, #tax), 2)'
+        id: 'inventory-range',
+        label: 'Summarize inventory levels',
+        model: formatModel({ shelves: [[12, 4], [8, 15]], reserved: 3 }),
+        expression: `clamp(
+    sub(max(#shelves), #reserved),
+    min(#shelves),
+    20
+)`
     },
     {
-        id: 'bounded-score',
-        label: 'Keep a score in range',
-        model: formatModel({ score: 108, minimum: 0, maximum: 100 }),
-        expression: 'clamp(max(#score, #minimum), #minimum, #maximum)'
+        id: 'score-normalization',
+        label: 'Normalize a review score',
+        model: formatModel({ raw: '7.8', baseline: 2, scale: 3 }),
+        expression: `ceil(
+    sqrt(
+        pow(num(#raw), #scale)
+    )
+)`
     },
     {
-        id: 'display-label',
-        label: 'Format a display label',
-        model: formatModel({ user: { name: 'Ada' }, role: 'engineer' }),
-        expression: 'concat(upper(#user.name), " / ", upper(#role))'
+        id: 'retry-budget',
+        label: 'Calculate a retry budget',
+        model: formatModel({ failures: -7.8, limit: 5, step: 2 }),
+        expression: `max(
+    0,
+    sub(#limit, abs(floor(#failures)))
+)`
+    },
+    {
+        id: 'batch-progress',
+        label: 'Measure batch progress',
+        model: formatModel({ completed: 37, total: 50 }),
+        expression: `concat(
+    int(div(mul(#completed, 100), #total)),
+    "% complete, ",
+    mod(#completed, #total),
+    " items into the current cycle"
+)`
+    },
+    {
+        id: 'optional-contact',
+        label: 'Format an optional contact',
+        model: formatModel({ contact: { name: '  Lin  ', phone: undefined }, fallback: 'support@example.test' }),
+        expression: `if(
+    and(
+        defined(#contact.name),
+        not(empty(trim(#contact.name)))
+    ),
+    concat("Contact ", trim(#contact.name)),
+    #fallback
+)`
+    },
+    {
+        id: 'compact-summary',
+        label: 'Build a compact summary',
+        model: formatModel({ title: 'Release notes', tags: ['parser', 'demo', 'v2'], owner: 'Mina' }),
+        expression: `concat(
+    trim(#title),
+    " / ",
+    len(#tags),
+    " tags / ",
+    upper(#owner)
+)`
     }
 ];
 

@@ -9,9 +9,17 @@ export interface OperatorDefinition {
 
 export type OperatorCategory = 'Logic and comparison' | 'Text and collections' | 'Conversion and numeric' | 'Arithmetic' | 'Conditional and matching';
 
+export const operatorCategoryDescriptions: Readonly<Record<OperatorCategory, string>> = {
+    'Logic and comparison': 'Combine conditions and compare values.',
+    'Text and collections': 'Inspect, transform, and combine strings and lists.',
+    'Conversion and numeric': 'Check values and convert them into numeric forms.',
+    Arithmetic: 'Evaluate numeric leaves, including values nested inside lists.',
+    'Conditional and matching': 'Choose between values or test text against a pattern.'
+};
+
 export const operatorDefinitions: readonly OperatorDefinition[] = [
     { name: 'not', signature: 'not(value)', detail: '1 argument', arity: 1, category: 'Logic and comparison', description: 'Logical negation' },
-    { name: 'eq', signature: 'eq(left, right)', detail: '2 arguments', arity: 2, category: 'Logic and comparison', description: 'Loose equality; lists and objects compare structurally' },
+    { name: 'eq', signature: 'eq(left, right)', detail: '2 arguments', arity: 2, category: 'Logic and comparison', description: 'Portable primitive equality; lists and objects compare structurally' },
     { name: 'or', signature: 'or(a, b, ...)', detail: '2+ arguments', arity: 'variadic', category: 'Logic and comparison', description: 'Logical OR, short-circuits' },
     { name: 'and', signature: 'and(a, b, ...)', detail: '2+ arguments', arity: 'variadic', category: 'Logic and comparison', description: 'Logical AND, short-circuits' },
     { name: 'gt', signature: 'gt(left, right)', detail: '2 arguments', arity: 2, category: 'Logic and comparison', description: 'Greater-than comparison' },
@@ -33,15 +41,15 @@ export const operatorDefinitions: readonly OperatorDefinition[] = [
     { name: 'ceil', signature: 'ceil(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Rounds a finite numeric input up' },
     { name: 'sqrt', signature: 'sqrt(value)', detail: '1 argument', arity: 1, category: 'Conversion and numeric', description: 'Returns the square root of a finite numeric input' },
     { name: 'concat', signature: 'concat(a, b, ...)', detail: '2+ arguments', arity: 'variadic', category: 'Text and collections', description: 'Concatenates values; falsy values become empty strings' },
-    { name: 'add', signature: 'add(a, b, ...)', detail: '2+ arguments or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Recursively flattens lists and adds numeric leaves; empty is 0' },
-    { name: 'sub', signature: 'sub(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Recursively flattens lists and subtracts at least two numeric leaves' },
-    { name: 'mul', signature: 'mul(a, b, ...)', detail: '2+ arguments or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Recursively flattens lists and multiplies numeric leaves; empty is 1' },
-    { name: 'div', signature: 'div(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Recursively flattens lists and divides at least two leaves; zero throws' },
-    { name: 'mod', signature: 'mod(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Recursively flattens lists and applies remainder; zero throws' },
-    { name: 'min', signature: 'min(a, b, ...)', detail: '1+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Returns the smallest numeric leaf after recursively flattening lists' },
-    { name: 'max', signature: 'max(a, b, ...)', detail: '1+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Returns the largest numeric leaf after recursively flattening lists' },
-    { name: 'round', signature: 'round(value, decimals)', detail: '2 arguments', arity: 2, category: 'Arithmetic', description: 'Rounds finite numeric inputs to decimal places' },
+    { name: 'add', signature: 'add(a, b, ...)', detail: '2+ arguments or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Adds values; empty input returns 0' },
+    { name: 'sub', signature: 'sub(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Subtracts values from left to right' },
+    { name: 'mul', signature: 'mul(a, b, ...)', detail: '2+ arguments or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Multiplies values; empty input returns 1' },
+    { name: 'div', signature: 'div(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Divides values from left to right; zero throws' },
+    { name: 'mod', signature: 'mod(a, b, ...)', detail: '2+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Applies remainder from left to right; zero throws' },
     { name: 'pow', signature: 'pow(value, exponent)', detail: '2 arguments', arity: 2, category: 'Arithmetic', description: 'Raises finite numeric inputs to a power' },
+    { name: 'min', signature: 'min(a, b, ...)', detail: '1+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Returns the smallest value' },
+    { name: 'max', signature: 'max(a, b, ...)', detail: '1+ leaves or 1 list', arity: 'variadic', category: 'Arithmetic', description: 'Returns the largest value' },
+    { name: 'round', signature: 'round(value, decimals)', detail: '2 arguments', arity: 2, category: 'Arithmetic', description: 'Rounds finite numeric inputs to decimal places' },
     { name: 'clamp', signature: 'clamp(value, minimum, maximum)', detail: '3 arguments', arity: 3, category: 'Arithmetic', description: 'Constrains finite numeric inputs to a range' },
     { name: 'match', signature: 'match(value, pattern)', detail: '2 arguments', arity: 2, category: 'Conditional and matching', description: 'Tests a value against a non-empty JavaScript regex pattern' },
     { name: 'if', signature: 'if(test, yes, no)', detail: '3 arguments', arity: 3, category: 'Conditional and matching', description: 'Returns yes or no based on a condition; evaluates one branch only' }

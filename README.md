@@ -54,11 +54,13 @@ The demo is a client-side showcase, not a security boundary. As with the library
 Constants:
 
 - `true` and `false`, case-insensitive
-- Numeric literals, including signed, decimal, and exponent values
+- Finite numeric literals in signed decimal/exponent form, including `.5`, `5.`, and `-2.5e+2`
 - Strings quoted with single quotes, double quotes, or backticks
 - Lists enclosed in square brackets, with comma-separated expressions such as `["yes", lower("NO"), #value]`
 
 String backslashes are retained literally; they only affect whether a quote closes the string. There are no `null` or `undefined` literals, no object literals, and exactly one complete expression is required. Bare identifiers other than `true` and `false` are operator names and must be followed by parentheses.
+
+Outer expression normalization and token separation recognize exactly Unicode White_Space: U+0009-U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000-U+200A, U+2028, U+2029, U+202F, U+205F, and U+3000. U+FEFF is not whitespace. The same set is used to trim numeric strings and by the `trim` operator.
 
 Model references start with `#`. Nested values use dots, such as `#user.name`. A literal own key such as `"user.name"` takes precedence over nested traversal. References only resolve own properties; inherited values are never read. JavaScript arrays currently expose numeric keys and `length` through this mechanism, but that is an incidental runtime behavior rather than a portable expression contract. Do not traverse arrays by reference in expressions shared with other implementations. The segments `__proto__`, `constructor`, and `prototype` are rejected. Models may contain JavaScript values that JSON cannot represent, including `undefined`, nonfinite numbers, shared references, and cycles; these are implementation-local behaviors rather than portable corpus values.
 
@@ -69,11 +71,11 @@ Operators are case-insensitive:
 | Operator | Arguments | Behavior |
 | --- | --- | --- |
 | `not` | 1 | Logical negation. |
-| `eq` | 2 | Loose equality, with structural equality for lists and objects using own enumerable properties. Cycles terminate safely, but equality of differently shaped cyclic graphs is not a graph-isomorphism guarantee. |
+| `eq` | 2 | Portable primitive equality and structural equality for lists and objects, as detailed below. Cycles terminate safely, but equality of differently shaped cyclic graphs is not a graph-isomorphism guarantee. |
 | `or` | 2+ | Logical OR with short-circuit evaluation. |
 | `and` | 2+ | Logical AND with short-circuit evaluation. |
-| `gt` | 2 | JavaScript greater-than comparison. |
-| `lt` | 2 | JavaScript less-than comparison. |
+| `gt` | 2 | Ordinal string or strict numeric greater-than comparison, as detailed below. |
+| `lt` | 2 | Ordinal string or strict numeric less-than comparison, as detailed below. |
 
 ### Text and collections
 
@@ -82,25 +84,25 @@ Operators are case-insensitive:
 | `contains` | 2 | Case-sensitive string containment; the left value must be a string. |
 | `startswith` | 2 | Case-sensitive string prefix matching; the left value must be a string. |
 | `endswith` | 2 | Case-sensitive string suffix matching; the left value must be a string. |
-| `in` | 2 | True when the first value is present in the second value, which must be a list; comparisons use the same loose equality as `eq`. |
+| `in` | 2 | True when the first value is present in the second value, which must be a list; comparisons use the same rules as `eq`. |
 | `empty` | 1 | True for `null`, `undefined`, and empty strings. |
 | `len` | 1 | Returns `0` for nullish values, a string length, or an own `length` property; throws otherwise. |
 | `lower` | 1 | Converts a value to lowercase text; falsey values become empty strings. |
 | `upper` | 1 | Converts a value to uppercase text; falsey values become empty strings. |
-| `trim` | 1 | Trims surrounding whitespace; nullish values remain unchanged and other falsey values become empty strings. |
-| `concat` | 2+ | Concatenates truthy values after calling `toString()`; falsy values become empty strings. |
+| `trim` | 1 | Trims the explicit Unicode White_Space set; nullish values remain unchanged and other falsey values become empty strings. |
+| `concat` | 2+ | Concatenates truthy values after portable text conversion; falsy values become empty strings. |
 
 ### Conversion and numeric
 
 | Operator | Arguments | Behavior |
 | --- | --- | --- |
 | `defined` | 1 | True for every value except `null` and `undefined`. |
-| `int` | 1 | Converts a finite number or finite numeric string and truncates toward zero with `Math.trunc()`. |
+| `int` | 1 | Strictly converts a finite number or finite signed decimal/exponent string and truncates toward zero. |
 | `num` | 1 | Converts a finite number or finite numeric string to a number. |
 | `abs` | 1 | Returns the absolute value of a finite numeric input. |
 | `floor` | 1 | Rounds a finite numeric input down to the nearest integer. |
 | `ceil` | 1 | Rounds a finite numeric input up to the nearest integer. |
-| `sqrt` | 1 | Returns the square root of a finite numeric input. The result may be `NaN`. |
+| `sqrt` | 1 | Returns the finite square root of a finite numeric input; a negative input throws `Invalid numeric result`. |
 
 ### Arithmetic
 
@@ -113,7 +115,7 @@ Operators are case-insensitive:
 | `mod` | 2+ (or 1 list) | Recursively flattens list arguments, then calculates remainder across at least two numeric leaves. Zero divisors throw. |
 | `min` | 2+ (or 1 list) | Returns the smallest numeric leaf after recursively flattening list arguments; no leaves throws. |
 | `max` | 2+ (or 1 list) | Returns the largest numeric leaf after recursively flattening list arguments; no leaves throws. |
-| `round` | 2 | Rounds strictly converted numeric values to a non-negative safe-integer number of decimal places. |
+| `round` | 2 | Rounds the converted finite runtime number to a precision from 0 through 308; exact midpoint ties round away from zero. |
 | `pow` | 2 | Raises a strictly converted value to a strictly converted exponent. |
 | `clamp` | 3 | Constrains strictly converted numeric values between a minimum and maximum. |
 
@@ -126,15 +128,31 @@ Operators are case-insensitive:
 
 Unquoted identifiers are operators and must be followed by parentheses. They are not string constants.
 
-All numeric scalar inputs must be finite numbers or finite numeric strings. Booleans, nullish or missing values, objects, lists used as leaves, blank or invalid strings, `NaN`, and infinities throw `Invalid numeric value`. Arithmetic may still produce `NaN` or infinity. Cyclic lists encountered while flattening arithmetic arguments also throw `Invalid numeric value`.
+All numeric scalar inputs must be finite numbers or strings which, after trimming the explicit whitespace set, match `[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?` and convert to a finite number. Radix strings, booleans, nullish or missing values, objects, lists used as leaves, blank or invalid strings, `NaN`, and infinities throw `Invalid numeric value`. Every numeric operator must also return a finite result; otherwise it throws `Invalid numeric result`. `div` and `mod` retain the more specific `Division by zero` error, including after an earlier nonfinite intermediate.
 
-Each of the seven arithmetic operators accepts one syntactic argument only when that argument evaluates to a list. A scalar call such as `add(1)`, `sub(1)`, or `max(1)` is invalid even where the operator's flattened list rules would otherwise permit one value.
+All numeric arguments are evaluated and recursively flattened before scalar conversion. Cyclic lists encountered during active flattening throw `Invalid numeric value`; a repeated list that is no longer active is allowed. Each of the seven list-aware numeric operators accepts any one expression argument syntactically, but at runtime that argument must evaluate to a list. A scalar result from `add(1)`, `sub(1)`, or `max(1)` throws an error containing `one list argument` even where flattened cardinality rules would otherwise permit one value.
+
+Numeric literals and scalar numeric operator results normalize negative zero to positive zero. A plain reference to a model-supplied `-0` is returned unchanged; this JavaScript-specific exception avoids copying or rewriting model values.
+
+`round` accepts a converted integer precision from 0 through 308 inclusive. It rounds decimal midpoint ties away from zero, distinguishes representable values adjacent to a midpoint, and does not fail only because multiplying by `10 ** precision` would overflow.
+
+Equality does not use JavaScript's general coercion. Missing and null equal each other and no other value. Same-kind primitives compare directly. A finite number can equal a valid decimal string, and a Boolean compares as `1` or `0` only against a finite number or valid decimal string; blank strings are never numeric. Lists compare only with lists by length and recursive elements, with sparse holes equivalent to `undefined`. Objects compare only with objects by own enumerable keys and recursive values. List/object, collection/scalar, invalid numeric, and nonfinite cross-kind comparisons are false. Structural equality is cycle-safe.
+
+`gt` and `lt` compare two nonblank strings by ordinal UTF-16 code-unit order, even when both look numeric. Otherwise, finite numbers and valid decimal strings compare numerically. Booleans, nullish or missing values, blank or invalid strings, lists, objects, and nonfinite numbers make the comparison false.
+
+Portable text conversion retains JavaScript's comma-separated list form: nullish elements and sparse holes contribute empty fields, nested lists are flattened textually through their commas, and objects use their normal JavaScript text. An active cyclic list throws `Cyclic list value`; reusing the same list after its earlier traversal is complete is allowed. This applies wherever operators convert values to text, including `concat`, string predicates, case conversion, `trim`, and regex input.
+
+Each list literal evaluation creates a fresh list, including `[]`; cached evaluators never share a mutable literal result between evaluations.
 
 Constant string patterns passed directly to `match` are compiled eagerly while parsing, so an invalid constant regex throws even if a surrounding expression would later short-circuit that branch. Model-derived patterns are compiled when evaluated.
 
 ## Caching
 
-Parsed evaluators and the expression wrappers used internally by `executeExpression` are cached by default. Each cache is bounded to 1,000 entries and evicts the oldest entry when full; cache hits do not refresh FIFO order. Use `SimpleExpressions.setCacheLimit(limit)` to set a positive safe-integer limit; lowering it immediately evicts the oldest existing entries. A limit of zero or less throws; use `disableCaches()` to disable caching, which also clears existing entries, and `enableCaches()` to resume caching.
+Parsed evaluators and the expression wrappers used internally by `executeExpression` are cached by default. Each cache is bounded to 1,000 entries and evicts the oldest entry when full; cache hits do not refresh FIFO order. Expression input type is validated before cache lookup. Boolean keys intentionally share entries with the equivalent lowercase strings (`true` with `"true"`, and `false` with `"false"`), while differently cased strings remain distinct. Use `SimpleExpressions.setCacheLimit(limit)` to set a positive safe-integer limit; lowering it immediately evicts the oldest existing entries. A limit of zero or less throws; use `disableCaches()` to disable caching, which also clears existing entries, and `enableCaches()` to resume caching.
+
+## Errors
+
+Parse-time failures (malformed syntax, unknown operators, non-finite literals, and invalid constant regex patterns) throw `ExpressionParseException`. Failures while evaluating a parsed expression (invalid numeric values, division by zero, invalid references, cyclic lists, and invalid model-supplied regex patterns) throw `ExpressionEvaluationException`. Both extend `Error` and are exported. Passing a value that is neither a string nor a Boolean throws a `TypeError`.
 
 ## Security
 

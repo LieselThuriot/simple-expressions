@@ -26,6 +26,11 @@ export const changeBuilderOperator = (node: BuilderNode, operator: string): Buil
 
 export const builderOperatorDefinitions = operatorDefinitions;
 
+export const builderOperatorGroups = [...new Set(operatorDefinitions.map((definition) => definition.category))].map((category) => ({
+    category,
+    operators: operatorDefinitions.filter((definition) => definition.category === category)
+}));
+
 export const builderValue = (value: BuilderValue): string => {
     if (value.kind === 'call') return serializeBuilder(value);
     if (value.kind === 'list') return `[${value.items.map(builderValue).join(', ')}]`;
@@ -60,8 +65,8 @@ export const getBuilderReferencePaths = (modelText: string): string[] => {
 
 export interface BuilderSample { id: string; label: string; model: string; node: BuilderNode; }
 export const builderSamples: BuilderSample[] = [
-    { id: 'access', label: 'Access check', model: '{\n  "role": "editor",\n  "active": true\n}', node: { kind: 'call', operator: 'and', args: [{ kind: 'call', operator: 'eq', args: [{ kind: 'reference', value: '#role' }, { kind: 'string', value: 'editor' }] }, { kind: 'reference', value: '#active' }] } },
-    { id: 'status', label: 'Status membership', model: '{\n  "status": "ready"\n}', node: { kind: 'call', operator: 'in', args: [{ kind: 'call', operator: 'lower', args: [{ kind: 'reference', value: '#status' }] }, { kind: 'list', items: [{ kind: 'string', value: 'ready' }, { kind: 'string', value: 'approved' }] }] } },
-    { id: 'conditional', label: 'Conditional label', model: '{\n  "score": 8\n}', node: { kind: 'call', operator: 'if', args: [{ kind: 'call', operator: 'gt', args: [{ kind: 'reference', value: '#score' }, { kind: 'number', value: '5' }] }, { kind: 'string', value: 'ready' }, { kind: 'string', value: 'keep practicing' }] } },
-    { id: 'text', label: 'Format text', model: '{\n  "name": "Ada",\n  "role": "engineer"\n}', node: { kind: 'call', operator: 'concat', args: [{ kind: 'string', value: 'Hello, ' }, { kind: 'reference', value: '#name' }, { kind: 'string', value: ' / ' }, { kind: 'reference', value: '#role' }] } }
+    { id: 'release-gate', label: 'Release gate', model: '{\n  "stage": "review",\n  "tests": 98,\n  "approved": true\n}', node: { kind: 'call', operator: 'and', args: [{ kind: 'call', operator: 'eq', args: [{ kind: 'reference', value: '#stage' }, { kind: 'string', value: 'review' }] }, { kind: 'call', operator: 'gt', args: [{ kind: 'reference', value: '#tests' }, { kind: 'number', value: '95' }] }, { kind: 'reference', value: '#approved' }] } },
+    { id: 'queue-label', label: 'Queue label', model: '{\n  "queue": "  priority  ",\n  "items": 4\n}', node: { kind: 'call', operator: 'concat', args: [{ kind: 'call', operator: 'upper', args: [{ kind: 'call', operator: 'trim', args: [{ kind: 'reference', value: '#queue' }] }] }, { kind: 'string', value: ' / ' }, { kind: 'reference', value: '#items' }, { kind: 'string', value: ' items' }] } },
+    { id: 'plan-selection', label: 'Select a service plan', model: '{\n  "seats": 12,\n  "region": "EU"\n}', node: { kind: 'call', operator: 'if', args: [{ kind: 'call', operator: 'and', args: [{ kind: 'call', operator: 'gt', args: [{ kind: 'reference', value: '#seats' }, { kind: 'number', value: '10' }] }, { kind: 'call', operator: 'in', args: [{ kind: 'reference', value: '#region' }, { kind: 'list', items: [{ kind: 'string', value: 'US' }, { kind: 'string', value: 'EU' }] }] }] }, { kind: 'string', value: 'team' }, { kind: 'string', value: 'starter' }] } },
+    { id: 'invoice-total', label: 'Invoice total', model: '{\n  "lines": [18, 12.5, 4],\n  "tax": 3.25\n}', node: { kind: 'call', operator: 'round', args: [{ kind: 'call', operator: 'add', args: [{ kind: 'reference', value: '#lines' }, { kind: 'reference', value: '#tax' }] }, { kind: 'number', value: '2' }] } }
 ];

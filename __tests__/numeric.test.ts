@@ -22,35 +22,35 @@ describe('numeric scalar validation', () => {
     });
 
     test('accepts finite numbers and finite numeric strings', () => {
-        expect(evaluate('add(#values)', { values: [1, ' 2.5 ', '-3e1'] })).toBe(-26.5);
+        expect(evaluate('add(#values)', { values: [1, ' 2.5 ', '-3e1', '.5', '5.'] })).toBe(-21);
     });
 
-    test('permits operations themselves to produce nonfinite results', () => {
-        expect(evaluate('sqrt(-1)')).toBeNaN();
-        expect(evaluate('pow(1e308, 2)')).toBe(Infinity);
-        expect(evaluate('add(1e308, 1e308)')).toBe(Infinity);
-        expect(evaluate('mul(1e308, 1e308)')).toBe(Infinity);
-        expect(evaluate('sub(-1e308, 1e308)')).toBe(-Infinity);
-        expect(evaluate('div(1e308, 1e-308)')).toBe(Infinity);
+    test.each(['0x10', '0Xff', '0b10', '0o10', '.', '+', '1_000', '1e', '1e309', '\ufeff1\ufeff'])('rejects non-decimal or nonfinite string %s', (value) => {
+        expect(() => evaluate('num(#value)', { value })).toThrow('Invalid numeric value');
     });
 
-    test.each([
-        'abs(sqrt(-1))',
-        'add(pow(1e308, 2), 1)',
-        'mul(1, sqrt(-1))',
-        'round(pow(1e308, 2), 2)',
-        'clamp(sqrt(-1), 0, 1)'
-    ])('rejects a nonfinite result consumed by an outer numeric operator: %s', (expression) => {
-        expect(() => evaluate(expression)).toThrow('Invalid numeric value');
+    test('rejects a nonfinite numeric literal', () => {
+        expect(() => parseExpression('1e309')).toThrow('Invalid numeric value');
     });
 
     test.each([
-        ['add(1e308, 1e308, -1e308)', Infinity],
-        ['sub(-1e308, 1e308, -1e308)', -Infinity],
-        ['mul(1e308, 1e308, 0)', NaN],
-        ['div(1e308, 1e-308, 2)', Infinity]
-    ])('does not revalidate a nonfinite intermediate arithmetic result: %s', (expression, expected) => {
-        expect(evaluate(expression)).toBe(expected);
+        'sqrt(-1)',
+        'pow(1e308, 2)',
+        'add(1e308, 1e308)',
+        'sub(-1e308, 1e308)',
+        'mul(1e308, 1e308)',
+        'div(1e308, 1e-308)'
+    ])('rejects a nonfinite numeric result: %s', (expression) => {
+        expect(() => evaluate(expression)).toThrow('Invalid numeric result');
+    });
+
+    test('retains the specific zero-divisor error after a nonfinite intermediate', () => {
+        expect(() => evaluate('div(1e308, 1e-308, 0)')).toThrow('Division by zero');
+        expect(() => evaluate('mod(1e308, 0)')).toThrow('Division by zero');
+    });
+
+    test('evaluates and flattens every argument before converting numeric leaves', () => {
+        expect(() => evaluate('add("invalid", sqrt(-1))')).toThrow('Invalid numeric result');
     });
 });
 
@@ -89,6 +89,46 @@ describe('arithmetic list expansion', () => {
 
         expect(() => evaluate('add(#values)', { values: cycle })).toThrow('Invalid numeric value');
         expect(evaluate('add(#values)', { values: [shared, shared] })).toBe(10);
+    });
+});
+
+describe('negative zero', () => {
+    test.each(['-0', 'round(-0.4, 0)', 'mul(-1, 0)', 'ceil(-0.5)', 'min(#positive, #negative)', 'max(#negative, #positive)'])('%s normalizes -0 to 0', (expression) => {
+        const model = { positive: 0, negative: -0 };
+        const result = evaluate(expression, model);
+        expect(result).toBe(0);
+        expect(Object.is(result, -0)).toBe(false);
+    });
+
+    // Documented divergence: the ports normalize model-supplied -0 at value construction.
+    test('a plain reference passes a model-supplied -0 through unchanged', () => {
+        expect(Object.is(evaluate('#value', { value: -0 }), -0)).toBe(true);
+    });
+});
+
+describe('rounding', () => {
+    test.each([
+        ['round(0.5, 0)', 1],
+        ['round(-0.5, 0)', -1],
+        ['round(2.5, 0)', 3],
+        ['round(-2.5, 0)', -3],
+        ['round(1.25, 1)', 1.3],
+        ['round(-1.25, 1)', -1.3],
+        ['round(1.005, 2)', 1],
+        ['round(-1.005, 2)', -1],
+        ['round(1.0049999999999997, 2)', 1],
+        ['round(1.0050000000000001, 2)', 1.01],
+        ['round(7.164692098702749e-215, 230)', 7.164692098702749e-215],
+        ['round(4.898568327955125e-190, 204)', 4.89856832795512e-190],
+        ['round(6.663776354903525e-38, 52)', 6.66377635490352e-38],
+        ['round(1e308, 308)', 1e308],
+        ['round(5e-324, 308)', 0]
+    ])('%s rounds robustly to %s', (expression, expected) => {
+        expect(evaluate(expression)).toBe(expected);
+    });
+
+    test.each([-1, 0.5, 309])('rejects invalid precision %s', (precision) => {
+        expect(() => evaluate('round(1, #precision)', { precision })).toThrow('Round precision');
     });
 });
 

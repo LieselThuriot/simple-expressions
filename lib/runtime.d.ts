@@ -6,6 +6,8 @@ export interface Evaluator {
     hasConstantValue?: boolean;
     constantValue?: any;
 }
+export declare const isPortableWhitespace: (code: number) => boolean;
+export declare const trimPortableWhitespace: (value: string) => string;
 export declare const equals: (value1: any, value2: any, compared?: WeakMap<object, WeakSet<object>>) => boolean;
 export declare const greaterThan: (value1: any, value2: any) => boolean;
 export declare const lessThan: (value1: any, value2: any) => boolean;
@@ -21,6 +23,8 @@ export declare const upper: (value: any) => string;
 export declare const trim: (value: any) => any;
 export declare const defined: (value: any) => boolean;
 export declare const toNumber: (value: any) => number;
+export declare const normalizeZero: (value: number) => number;
+export declare const numericResult: (value: number) => number;
 export declare const expandNumericValues: (operator: string, values: Evaluator[], model: Model) => any[];
 export declare const int: (value: any) => number;
 export declare const num: (value: any) => number;

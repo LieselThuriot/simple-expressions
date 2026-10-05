@@ -1,5 +1,7 @@
+export { ExpressionParseException, ExpressionEvaluationException } from './errors';
+import { ExpressionParseException } from './errors';
 import { compileExpression } from './parser';
-import { Evaluator, constantEvaluator } from './runtime';
+import { Evaluator, constantEvaluator, trimPortableWhitespace } from './runtime';
 
 type Model = { [key: string]: any; };
 
@@ -17,6 +19,9 @@ export class SimpleExpressions {
 
     /** @internal */
     static get(e: string | boolean): SimpleExpression {
+        if (typeof e !== 'string' && typeof e !== 'boolean') {
+            throw new TypeError('Invalid Expression: unsupported type ' + (typeof e));
+        }
         const key = '' + e;
         if (this._enabledCaches) {
             const cachedExpression = this._simpleCache.get(key);
@@ -36,10 +41,10 @@ export class SimpleExpressions {
 
     /** @internal */
     static getParsedExpression(expression: string, factory: (value: string) => Evaluator): Evaluator {
-        expression = expression.trim();
+        expression = trimPortableWhitespace(expression);
 
         if (expression === '') {
-            throw new Error('Invalid Expression: formatting');
+            throw new ExpressionParseException('Invalid Expression: formatting');
         }
 
         if (this._enabledCaches) {
@@ -117,6 +122,9 @@ export class SimpleExpressions {
 }
 
 export const parseExpression = (expression: string): (model: Model) => any => {
+    if (typeof expression !== 'string') {
+        throw new TypeError('Invalid Expression: unsupported type ' + (typeof expression));
+    }
     return SimpleExpressions.getParsedExpression(expression, compileExpression);
 };
 
@@ -135,12 +143,12 @@ export class SimpleExpression {
         }
 
         if (typeof expression !== 'string') {
-            throw new Error('Invalid Expression: unsupported type' + (typeof expression));
+            throw new TypeError('Invalid Expression: unsupported type ' + (typeof expression));
         }
 
-        const normalizedExpression = expression.trim();
+        const normalizedExpression = trimPortableWhitespace(expression);
         if (!normalizedExpression) {
-            throw new Error('Invalid Expression: whitespace');
+            throw new ExpressionParseException('Invalid Expression: whitespace');
         }
 
         this._parsedExpression = parseExpression(normalizedExpression);

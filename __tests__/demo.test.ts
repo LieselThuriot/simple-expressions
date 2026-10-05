@@ -14,7 +14,7 @@ import {
     operatorDefinitions,
     resolveModelPath
 } from '../demo/src/expression-completions';
-import { builderOperatorDefinitions, builderSamples, changeBuilderOperator, createBuilderNode, getBuilderReferencePaths, serializeBuilder } from '../demo/src/expression-builder';
+import { builderOperatorDefinitions, builderOperatorGroups, builderSamples, changeBuilderOperator, createBuilderNode, getBuilderReferencePaths, serializeBuilder } from '../demo/src/expression-builder';
 
 describe('demo playground helpers', () => {
     test('parses JSON object, array, and null models', () => {
@@ -48,23 +48,41 @@ describe('demo playground helpers', () => {
         });
     });
 
-    test('includes a defined and trim example', () => {
-        const example = examples.find((candidate) => candidate.id === 'normalize-name');
+    test('includes a composed profile formatting example', () => {
+        const example = examples.find((candidate) => candidate.id === 'profile-label');
 
         expect(example).toBeDefined();
         expect(evaluatePlayground(example!.model, example!.expression)).toEqual({
             ok: true,
-            value: { display: '"Ada Lovelace"', type: 'string' }
+            value: { display: '"ADA Lovelace"', type: 'string' }
         });
     });
 
-    test('every playground example has a unique id and evaluates successfully', () => {
+    test('every playground example returns its expected result', () => {
         expect(new Set(examples.map((example) => example.id)).size).toBe(examples.length);
+
+        const expectedResults = {
+            'editor-review': { display: 'true', type: 'boolean' },
+            'shipping-eligibility': { display: 'true', type: 'boolean' },
+            'profile-label': { display: '"ADA Lovelace"', type: 'string' },
+            'slug-check': { display: 'true', type: 'boolean' },
+            'status-label': { display: '"Package is in_transit"', type: 'string' },
+            'cart-total': { display: '80.72', type: 'number' },
+            'inventory-range': { display: '12', type: 'number' },
+            'score-normalization': { display: '22', type: 'number' },
+            'retry-budget': { display: '0', type: 'number' },
+            'batch-progress': { display: '"74% complete, 37 items into the current cycle"', type: 'string' },
+            'optional-contact': { display: '"Contact Lin"', type: 'string' },
+            'compact-summary': { display: '"Release notes / 3 tags / MINA"', type: 'string' }
+        } as const;
 
         for (const example of examples) {
             const result = evaluatePlayground(example.model, example.expression);
 
-            expect(result.ok, `${example.id} should evaluate successfully`).toBe(true);
+            expect(result, `${example.id} should return its expected result`).toEqual({
+                ok: true,
+                value: expectedResults[example.id as keyof typeof expectedResults]
+            });
         }
     });
 
@@ -158,6 +176,19 @@ describe('demo expression builder helpers', () => {
         expect(builderOperatorDefinitions.filter((item) => item.arity === 'variadic')).toHaveLength(10);
     });
 
+    test('groups operators by their reference categories', () => {
+        expect(builderOperatorGroups.map((group) => group.category)).toEqual([
+            'Logic and comparison',
+            'Text and collections',
+            'Conversion and numeric',
+            'Arithmetic',
+            'Conditional and matching'
+        ]);
+        expect(builderOperatorGroups.find((group) => group.category === 'Text and collections')?.operators.map((item) => item.name)).toEqual([
+            'contains', 'startswith', 'endswith', 'in', 'empty', 'len', 'lower', 'upper', 'trim', 'concat'
+        ]);
+    });
+
     test('creates correctly shaped nodes for fixed and variadic operators', () => {
         expect(createBuilderNode('not').args).toHaveLength(1);
         expect(createBuilderNode('if').args).toHaveLength(3);
@@ -191,26 +222,38 @@ describe('demo expression builder helpers', () => {
         expect(getBuilderReferencePaths('{invalid}')).toEqual([]);
     });
 
-    test('provides valid, evaluatable builder samples', () => {
+    test('every builder sample returns its expected result', () => {
         expect(new Set(builderSamples.map((sample) => sample.id)).size).toBe(builderSamples.length);
+
+        const expectedResults = {
+            'release-gate': { display: 'true', type: 'boolean' },
+            'queue-label': { display: '"PRIORITY / 4 items"', type: 'string' },
+            'plan-selection': { display: '"team"', type: 'string' },
+            'invoice-total': { display: '37.75', type: 'number' }
+        } as const;
+
         for (const sample of builderSamples) {
             const result = evaluatePlayground(sample.model, serializeBuilder(sample.node));
-            expect(result.ok, `${sample.id} should evaluate`).toBe(true);
+
+            expect(result, `${sample.id} should return its expected result`).toEqual({
+                ok: true,
+                value: expectedResults[sample.id as keyof typeof expectedResults]
+            });
         }
     });
 
-    test('includes a math example', () => {
-        const example = examples.find((candidate) => candidate.id === 'math');
+    test('includes a cart total example', () => {
+        const example = examples.find((candidate) => candidate.id === 'cart-total');
 
         expect(example).toBeDefined();
         expect(evaluatePlayground(example!.model, example!.expression)).toEqual({
             ok: true,
-            value: { display: '41.5', type: 'number' }
+            value: { display: '80.72', type: 'number' }
         });
     });
 
-    test('includes the rounding and clamping examples', () => {
-        expect(examples.find((candidate) => candidate.id === 'rounded-total')).toBeDefined();
-        expect(examples.find((candidate) => candidate.id === 'bounded-score')).toBeDefined();
+    test('includes numeric normalization and inventory examples', () => {
+        expect(examples.find((candidate) => candidate.id === 'score-normalization')).toBeDefined();
+        expect(examples.find((candidate) => candidate.id === 'inventory-range')).toBeDefined();
     });
 });

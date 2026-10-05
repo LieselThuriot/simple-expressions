@@ -1,3 +1,6 @@
+import { ExpressionParseException } from './errors';
+import { isPortableWhitespace } from './runtime';
+
 export enum TokenKind {
     End,
     Identifier,
@@ -35,7 +38,7 @@ export class Tokenizer {
     public next(): void {
         const length = this.source.length;
 
-        while (this.index < length && this.source.charCodeAt(this.index) <= 32) {
+        while (this.index < length && isPortableWhitespace(this.source.charCodeAt(this.index))) {
             this.index++;
         }
 
@@ -111,12 +114,12 @@ export class Tokenizer {
         this.fail('unexpected token ' + value);
     }
 
-    private static readonly numericPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+    private static readonly numericPattern = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/;
 
     private readDelimitedToken(): void {
         while (this.index < this.source.length) {
             const character = this.source.charAt(this.index);
-            if (character === '(' || character === ')' || character === ',' || character === '[' || character === ']' || character.charCodeAt(0) <= 32) {
+            if (character === '(' || character === ')' || character === ',' || character === '[' || character === ']' || isPortableWhitespace(character.charCodeAt(0))) {
                 return;
             }
             this.index++;
@@ -161,6 +164,6 @@ export class Tokenizer {
     }
 
     private fail(message: string): never {
-        throw new Error('Invalid Expression at ' + this.index + ': ' + message);
+        throw new ExpressionParseException('Invalid Expression at ' + this.index + ': ' + message);
     }
 }

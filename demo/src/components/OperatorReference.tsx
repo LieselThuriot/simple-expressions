@@ -1,34 +1,35 @@
-import { operatorDefinitions } from '../constants';
+import { operatorCategoryDescriptions, operatorDefinitions } from '../constants';
 
 const operatorCategories = [...new Set(operatorDefinitions.map((operator) => operator.category))];
 
 export const OperatorReference = () => {
     return (
         <section className="reference" aria-labelledby="reference-heading">
-            <div>
+            <div className="reference-intro">
                 <p className="section-kicker">Reference</p>
                 <h2 id="reference-heading">Operators</h2>
+                <p>Everything available in the expression language, organized by the job it does.</p>
             </div>
-            <div className="operator-table-wrap">
+            <div className="operator-catalog">
                 {operatorCategories.map((category) => (
                     <section className="operator-subsection" key={category} aria-labelledby={`operator-${category}`}>
-                        <h3 id={`operator-${category}`}>{category}</h3>
-                        <table className="operator-table">
-                            <thead>
-                                <tr>
-                                    <th>Signature</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {operatorDefinitions.filter((operator) => operator.category === category).map((operator) => (
-                                    <tr key={operator.name}>
-                                        <td><code>{operator.signature}</code></td>
-                                        <td>{operator.description}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="operator-category-heading">
+                            <h3 id={`operator-${category}`}>{category}</h3>
+                            <p>{operatorCategoryDescriptions[category]}</p>
+                            {category === 'Arithmetic' && <p className="operator-category-note">Nested lists are flattened depth-first before calculation.</p>}
+                        </div>
+                        <div className="operator-grid">
+                            {operatorDefinitions.filter((operator) => operator.category === category).map((operator) => (
+                                <article className="operator-card" key={operator.name}>
+                                    <div className="operator-card-topline">
+                                        <strong>{operator.name}</strong>
+                                        <span>{operator.detail}</span>
+                                    </div>
+                                    <code className="operator-signature">{operator.signature}</code>
+                                    <p>{operator.description}</p>
+                                </article>
+                            ))}
+                        </div>
                     </section>
                 ))}
             </div>

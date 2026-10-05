@@ -565,6 +565,19 @@ select {
 .builder-value + .builder-value { margin-top: 9px; }
 .builder-node-heading, .builder-value { display: flex; align-items: center; gap: 8px; }
 .builder-node-heading select { min-width: 0; flex: 1; }
+.builder-operator-select {
+    min-height: 42px;
+    padding-right: 36px;
+    border-color: var(--blue-ver-border);
+    color: var(--input-text);
+    background-color: var(--surface);
+    font-family: var(--code-font);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+.builder-operator-select:hover { border-color: var(--blue); }
+.builder-operator-select optgroup { color: var(--blue-dark); font-family: var(--font-family, "Segoe UI", Inter, system-ui, sans-serif); font-size: 0.72rem; font-weight: 750; }
+.builder-operator-select option { color: var(--input-text); font-family: var(--code-font); font-size: 0.78rem; font-weight: 400; }
 .builder-args { display: grid; gap: 8px; margin: 10px 0; padding-left: 12px; border-left: 2px solid var(--blue-glow); }
 .builder-value { padding: 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
 .builder-value select { min-height: 31px; padding: 0 7px; font-size: 0.72rem; }
@@ -776,11 +789,18 @@ select:focus-visible,
 
 .reference {
     display: grid;
-    grid-template-columns: 170px 1fr;
+    grid-template-columns: 190px 1fr;
     align-items: start;
     gap: 28px;
     margin-top: 20px;
     padding: 24px 28px;
+}
+
+.reference-intro p:last-child {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.55;
 }
 
 .ports {
@@ -883,60 +903,83 @@ select:focus-visible,
     font-weight: 700;
 }
 
-.operator-table-wrap {
-    overflow-x: auto;
-}
-
 .operator-subsection + .operator-subsection {
-    margin-top: 26px;
+    margin-top: 32px;
 }
 
-.operator-subsection h3 {
-    margin: 0 0 12px;
+.operator-category-heading {
+    margin-bottom: 14px;
+}
+
+.operator-category-heading h3 {
+    margin: 0;
     color: var(--ink);
-    font-size: 0.78rem;
+    font-size: 0.86rem;
     font-weight: 750;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    letter-spacing: -0.01em;
 }
 
-.operator-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.82rem;
-}
-
-.operator-table thead th {
-    padding: 0 16px 10px 0;
-    border-bottom: 1px solid var(--line);
+.operator-category-heading p {
+    max-width: 620px;
+    margin: 5px 0 0;
     color: var(--muted);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-align: left;
-    text-transform: uppercase;
+    font-size: 0.78rem;
+    line-height: 1.45;
 }
 
-.operator-table thead th:first-child {
-    min-width: 200px;
+.operator-category-heading .operator-category-note {
+    color: var(--blue-dark);
+    font-size: 0.72rem;
+    font-weight: 650;
 }
 
-.operator-table tbody tr + tr td {
-    border-top: 1px solid var(--line);
+.operator-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
-.operator-table td {
-    padding: 7px 16px 7px 0;
-    vertical-align: middle;
+.operator-card {
+    min-width: 0;
+    padding: 14px 15px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-dim);
+}
+
+.operator-card-topline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.operator-card-topline strong {
+    color: var(--ink);
+    font-family: var(--code-font);
+    font-size: 0.84rem;
+}
+
+.operator-card-topline span {
+    color: var(--faint);
+    font-size: 0.64rem;
+    line-height: 1.3;
+    text-align: right;
+}
+
+.operator-signature {
+    display: block;
+    margin-top: 8px;
+    color: var(--code-text);
+    font-size: 0.73rem;
+    overflow-wrap: anywhere;
+}
+
+.operator-card p {
+    margin: 9px 0 0;
     color: var(--muted);
-}
-
-.operator-table td:first-child {
-    white-space: nowrap;
-}
-
-.operator-table td code {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
+    line-height: 1.45;
 }
 
 .footer {
@@ -962,6 +1005,10 @@ select:focus-visible,
     .builder-grid { grid-template-columns: 1fr; }
 
     .reference {
+        grid-template-columns: 1fr;
+    }
+
+    .operator-grid {
         grid-template-columns: 1fr;
     }
 
