@@ -3,7 +3,7 @@ import { ExpressionEvaluationException, ExpressionParseException, parseExpressio
 
 describe('exceptions', () => {
     it('reports parse failures as ExpressionParseException', () => {
-        for (const expression of ['1e309', 'eq(1', 'match(#a, "(")', 'nope(1)']) {
+        for (const expression of ['1e309', 'eq(1', 'match(#a, "(")', 'nope(1)', '#user..name', '#constructor']) {
             expect(() => parseExpression(expression), expression).toThrow(ExpressionParseException);
         }
     });

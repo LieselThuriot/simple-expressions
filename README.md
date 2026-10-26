@@ -152,7 +152,7 @@ Parsed evaluators and the expression wrappers used internally by `executeExpress
 
 ## Errors
 
-Parse-time failures (malformed syntax, unknown operators, non-finite literals, and invalid constant regex patterns) throw `ExpressionParseException`. Failures while evaluating a parsed expression (invalid numeric values, division by zero, invalid references, cyclic lists, and invalid model-supplied regex patterns) throw `ExpressionEvaluationException`. Both extend `Error` and are exported. Passing a value that is neither a string nor a Boolean throws a `TypeError`.
+Parse-time failures (malformed syntax, unknown operators, non-finite literals, invalid references, and invalid constant regex patterns) throw `ExpressionParseException`. Failures while evaluating a parsed expression (invalid numeric values, division by zero, cyclic lists, and invalid model-supplied regex patterns) throw `ExpressionEvaluationException`. Both extend `Error` and are exported. Passing a value that is neither a string nor a Boolean throws a `TypeError`.
 
 ## Security
 

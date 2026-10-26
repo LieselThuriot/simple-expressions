@@ -1,4 +1,4 @@
-import { ExpressionEvaluationException } from './errors';
+import { ExpressionEvaluationException, ExpressionParseException } from './errors';
 export type Model = { [key: string]: any; };
 
 export interface Evaluator {
@@ -361,7 +361,7 @@ export const referenceEvaluator = (path: string): Evaluator => {
 
     for (const segment of segments) {
         if (!segment || unsafeReferenceSegments.has(segment)) {
-            throw new ExpressionEvaluationException('Invalid Expression: invalid model reference: #' + path);
+            throw new ExpressionParseException('Invalid Expression: invalid model reference: #' + path);
         }
     }
 
