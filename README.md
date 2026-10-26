@@ -168,6 +168,14 @@ This package supports conformance specification v1. Initialize `__tests__/confor
 
 ## Development
 
+### Version 2.0.0 compatibility notes
+
+This release intentionally replaces JavaScript's general loose equality and comparison coercions with the portable v1 rules. For example, `eq(false, "")`, `eq([], "")`, and `gt(true, 0)` now return `false`; distinct objects with equal own keys and values compare structurally. Unicode White_Space is recognized consistently, while U+FEFF is preserved by `trim` and rejected at expression boundaries.
+
+Numeric operators require finite numbers or finite decimal/exponent strings, recursively expand list arguments where supported, and reject nonfinite results. `setCacheLimit(0)` now throws; use `disableCaches()` to disable caching. Parse and evaluation failures use the exported exception types described above. Review existing expressions and error handling when upgrading.
+
+### Release checks
+
 ```bash
 npm test
 npm run pack:check
