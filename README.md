@@ -38,14 +38,17 @@ For direct use, `new SimpleExpression(expression)` accepts an expression string 
 
 Try the interactive playground at [simple-expressions.liesel.dev](https://simple-expressions.liesel.dev/).
 
-The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the package source bundled locally for the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, `if`, and the math operators.
+The demo lets you edit a JSON model and expression, then evaluates the expression in your browser using the library bundled with the site. It showcases both boolean expressions and value-producing expressions such as `concat`, `len`, `lower`, `upper`, `if`, and the math operators.
 
-To run the demo locally:
+To run the demo from a repository checkout, use Node.js 24 LTS or another version supported by the development tools:
 
 ```bash
-npm install
+npm ci
+npm run build
 npm run demo
 ```
+
+The demo imports the built library from `lib/`. Run `npm run build` again after changing library source files.
 
 The demo is a client-side showcase, not a security boundary. As with the library itself, expression text and regular-expression patterns should be treated as trusted input.
 
@@ -126,11 +129,9 @@ Operators are case-insensitive:
 | `match` | 2 | Tests a value against a non-empty JavaScript regular-expression pattern; empty or non-string patterns return `false`. |
 | `if` | 3 | Returns the second or third argument based on the truthiness of the first; only the selected branch is evaluated. |
 
-Unquoted identifiers are operators and must be followed by parentheses. They are not string constants.
-
 All numeric scalar inputs must be finite numbers or strings which, after trimming the explicit whitespace set, match `[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?` and convert to a finite number. Radix strings, booleans, nullish or missing values, objects, lists used as leaves, blank or invalid strings, `NaN`, and infinities throw `Invalid numeric value`. Every numeric operator must also return a finite result; otherwise it throws `Invalid numeric result`. `div` and `mod` retain the more specific `Division by zero` error, including after an earlier nonfinite intermediate.
 
-All numeric arguments are evaluated and recursively flattened before scalar conversion. Cyclic lists encountered during active flattening throw `Invalid numeric value`; a repeated list that is no longer active is allowed. Each of the seven list-aware numeric operators accepts any one expression argument syntactically, but at runtime that argument must evaluate to a list. A scalar result from `add(1)`, `sub(1)`, or `max(1)` throws an error containing `one list argument` even where flattened cardinality rules would otherwise permit one value.
+The seven list-aware numeric operators evaluate all arguments, then recursively flatten lists before scalar conversion. Cyclic lists encountered during active flattening throw `Invalid numeric value`; a repeated list that is no longer active is allowed. Each of these operators accepts any one expression argument syntactically, but at runtime that argument must evaluate to a list. A scalar result from `add(1)`, `sub(1)`, or `max(1)` throws an error containing `one list argument` even where flattened cardinality rules would otherwise permit one value.
 
 Numeric literals and scalar numeric operator results normalize negative zero to positive zero. A plain reference to a model-supplied `-0` is returned unchanged; this JavaScript-specific exception avoids copying or rewriting model values.
 
@@ -162,25 +163,48 @@ Expressions and regular-expression patterns are trusted input. `match` accepts J
 
 Cross-language compatibility is tested in the independent [simple-expressions-conformance](https://github.com/LieselThuriot/simple-expressions-conformance) repository. This package has no filesystem or checkout dependency on the C# and Dart implementations.
 
-The conformance specification is versioned and maintained independently. See the conformance repository for the corpus, adapter contract, and cross-language CI.
+The conformance specification is versioned and maintained independently. See the conformance repository for the corpus and adapter contract; each implementation runs the corpus through its own test suite.
 
-This package supports conformance specification v1. Initialize `__tests__/conformance/` before running conformance tests.
+This package supports conformance specification v1. See [CONFORMANCE.md](https://github.com/LieselThuriot/simple-expressions/blob/master/CONFORMANCE.md) for compatibility details. The repository pins the corpus at `__tests__/conformance/`.
 
-## Development
-
-### Version 2.0.0 compatibility notes
+## Version 2.0.0 compatibility notes
 
 This release intentionally replaces JavaScript's general loose equality and comparison coercions with the portable v1 rules. For example, `eq(false, "")`, `eq([], "")`, and `gt(true, 0)` now return `false`; distinct objects with equal own keys and values compare structurally. Unicode White_Space is recognized consistently, while U+FEFF is preserved by `trim` and rejected at expression boundaries.
 
 Numeric operators require finite numbers or finite decimal/exponent strings, recursively expand list arguments where supported, and reject nonfinite results. `setCacheLimit(0)` now throws; use `disableCaches()` to disable caching. Parse and evaluation failures use the exported exception types described above. Review existing expressions and error handling when upgrading.
 
-### Release checks
+## Development
+
+Run these commands from the root of a repository checkout. Node.js 24 LTS is recommended for development. The current test runner supports Node.js `^22.12.0 || ^24.0.0 || >=26.0.0`; this is separate from the published library's Node.js 20+ requirement.
+
+Initialize the shared test fixtures and install dependencies:
+
+```bash
+git submodule update --init --recursive
+npm ci
+```
+
+Then run the tests and build the production demo:
 
 ```bash
 npm test
+npm run demo:build
+```
+
+`npm test` rebuilds the published library in `lib/` before running the tests. `npm run demo:build` rebuilds the library and writes the production site to `docs/`. Both generated directories are tracked in this repository; review their changes with the source changes.
+
+## Publishing
+
+From the repository checkout, run `npm test` and inspect the package contents:
+
+```bash
 npm run pack:check
+```
+
+With the release version set and npm authentication configured, publish with:
+
+```bash
 npm run release
 ```
 
-`npm test` rebuilds the published output before running the test suite. `npm run pack:check` shows the files that would be included in a release.
-`npm run release` creates the package tarball and publishes it to npm.
+`npm run pack:check` is a dry run. `npm run release` creates the package tarball and publishes the package to npm; the `prepublishOnly` hook runs the tests again before publication.

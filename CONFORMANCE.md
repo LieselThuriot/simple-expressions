@@ -4,7 +4,7 @@ Cross-language compatibility is specified and tested by the independent [simple-
 
 The pinned `__tests__/conformance/` submodule supplies `spec/v1/cases.json`, which is executed by `__tests__/conformance.test.ts`. Initialize it with `git submodule update --init --recursive`. The test reads the corpus in place and does not copy files from the submodule.
 
-The conformance suite is the minimum shared test set. The additional local tests cover this repository's demo helpers and are not part of the cross-language count.
+The conformance suite is the minimum shared test set. Additional local tests cover numeric behavior, caching, exceptions, corpus validation, and demo helpers; they are not part of the cross-language count.
 
 This implementation supports conformance specification v1 and retains JavaScript-style truthiness. Portable whitespace is the explicit Unicode White_Space set U+0009-U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000-U+200A, U+2028, U+2029, U+202F, U+205F, and U+3000; U+FEFF is excluded. This set controls outer normalization, token boundaries, numeric trimming, and `trim`.
 
@@ -16,4 +16,4 @@ Equality follows explicit primitive conversion domains and structural collection
 
 List-to-text conversion preserves comma formatting and treats holes and nullish items as empty fields. An active cyclic list throws `Cyclic list value`, while repeated non-active use is allowed. Every list expression evaluation returns a fresh list, including an empty literal. Expression types are validated before cache lookup, and Boolean cache keys intentionally remain shared with their lowercase string forms.
 
-The JSON corpus cannot represent `undefined`, `NaN`, infinity, negative zero, sparse arrays, shared references, or cyclic models. Those behaviors remain implementation-local tests. The adapter preserves an explicitly declared `null` model and validates each case has exactly one expectation field, including `value: null`.
+JSON cannot represent `undefined`, `NaN`, infinity, sparse array holes, shared-reference identity, or cyclic models. Those behaviors remain implementation-local tests. JSON permits a `-0` number token, but serializers and language adapters do not consistently preserve its sign, so signed-zero behavior is also tested locally. The adapter preserves an explicitly declared `null` model and validates each case has exactly one expectation field, including `value: null`.
