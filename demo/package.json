@@ -10,24 +10,24 @@
         "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
     },
     "dependencies": {
-        "@codemirror/autocomplete": "^6.20.3",
-        "@codemirror/lang-json": "^6.0.1",
-        "@codemirror/language": "^6.12.4",
-        "@codemirror/state": "^6.7.1",
-        "@codemirror/view": "^6.43.6",
-        "@lezer/highlight": "^1.2.3",
-        "@uiw/react-codemirror": "^4.25.2",
+        "@codemirror/autocomplete": "^6.20.4",
+        "@codemirror/lang-json": "^6.0.2",
+        "@codemirror/language": "^6.13.1",
+        "@codemirror/state": "^6.7.6",
+        "@codemirror/view": "^6.43.15",
+        "@lezer/highlight": "^1.2.5",
+        "@uiw/react-codemirror": "^4.25.12",
         "codemirror": "^6.0.2",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
         "simple-expressions": "file:.."
     },
     "devDependencies": {
-        "@types/node": "^26.2.0",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "@vitejs/plugin-react": "^6.0.0",
+        "@types/node": "^26.6.5",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.1.2",
         "typescript": "^7.0.2",
-        "vite": "^8.1.5"
+        "vite": "^8.3.5"
     }
 }
